@@ -3,7 +3,7 @@ import { Badge } from '../ui/badge'
 
 export default function Navbar() {
   return (
-    <nav className='border-b border-border'>
+    <nav className='border-b border-muted-foreground/30'>
       <header className='max-w-7xl mx-auto flex justify-between items-center p-4'>
         <Link href='/'>
           <h1 className='text-2xl font-bold'>AcademIA</h1>
@@ -15,7 +15,7 @@ export default function Navbar() {
           >
             2025-2
           </Badge>
-          <div className='w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold cursor-pointer'>
+          <div className='w-10 h-10 rounded-full bg-muted-foreground/30 flex items-center justify-center text-sm font-semibold cursor-pointer'>
             LE
           </div>
         </div>

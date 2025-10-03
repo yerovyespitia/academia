@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function SubNavbar() {
   return (
-    <nav className='border-b border-border'>
+    <nav className='border-b border-muted-foreground/30'>
       <header className='max-w-7xl mx-auto flex justify-center items-center p-4'>
         <div className='flex items-center justify-center gap-4 flex-wrap'>
           <Link
