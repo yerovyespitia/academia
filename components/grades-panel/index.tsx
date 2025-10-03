@@ -75,7 +75,7 @@ const statusConfig: Record<
   },
   good: {
     badgeClass: 'bg-accent text-accent-foreground border-accent-foreground/30',
-    requiredGradeClass: 'text-accent',
+    requiredGradeClass: 'text-accent-foreground',
     icon: CheckCircle2,
     iconClass: 'text-green-500',
     message: 'En buen camino',
