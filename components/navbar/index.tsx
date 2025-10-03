@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Badge } from '../ui/badge'
 
 export default function Navbar() {
   return (
@@ -8,12 +9,15 @@ export default function Navbar() {
           <h1 className='text-2xl font-bold'>AcademIA</h1>
         </Link>
         <div className='flex items-center gap-4'>
-          <Link
-            className='font-medium'
-            href='/login'
+          <Badge
+            variant='outline'
+            className='bg-primary/10 text-primary border-primary/20'
           >
-            Iniciar sesión
-          </Link>
+            2025-2
+          </Badge>
+          <div className='w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold cursor-pointer'>
+            LE
+          </div>
         </div>
       </header>
     </nav>
