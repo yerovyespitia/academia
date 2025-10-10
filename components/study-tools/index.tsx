@@ -1,5 +1,4 @@
 import UploadNotes from '../upload-notes'
-import TagOrganization from '../tag-organization'
 import QuizzGenerator from '../quizz-generator'
 import Attendance from '../attendance'
 import Glossary from '../glossary'
@@ -14,9 +13,8 @@ export default function StudyTools() {
         </div>
       </header>
       <section className='mb-8'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        <div className='w-full'>
           <UploadNotes />
-          <TagOrganization />
         </div>
       </section>
       <section className='mb-8'>
