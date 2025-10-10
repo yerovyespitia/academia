@@ -9,6 +9,10 @@ const links = [
     href: '/documents',
   },
   {
+    label: 'Chat',
+    href: '/chat',
+  },
+  {
     label: 'Quizzes',
     href: '/',
   },
@@ -18,14 +22,6 @@ const links = [
   },
   {
     label: 'Mapas conceptuales',
-    href: '/',
-  },
-  {
-    label: 'Etiquetas',
-    href: '/',
-  },
-  {
-    label: 'Historial académico',
     href: '/',
   },
 ]
