@@ -21,7 +21,7 @@ export default function QuizzGenerator() {
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <Brain className='w-5 h-5 text-primary' />
-          Generador de Quizzes con IA
+          Generador de Quizzes
           <span>
             <Sparkles
               size={15}
@@ -38,31 +38,35 @@ export default function QuizzGenerator() {
         <div className='space-y-4'>
           <div className='grid grid-cols-2 gap-3'>
             <div className='border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer'>
-              <div className='flex items-center gap-3 mb-2'>
+              <div className='flex items-center gap-3'>
                 <div className='size-8 rounded bg-accent flex items-center justify-center'>
                   <Target className='size-4 text-primary' />
                 </div>
-                <p className='font-medium text-sm text-foreground'>
-                  Opción Múltiple
-                </p>
+                <div>
+                  <p className='font-medium text-sm text-foreground'>
+                    Opción Múltiple
+                  </p>
+                  <p className='text-xs text-muted-foreground'>
+                    Evaluación rápida de conceptos
+                  </p>
+                </div>
               </div>
-              <p className='text-xs text-muted-foreground'>
-                Evaluación rápida de conceptos
-              </p>
             </div>
 
             <div className='border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer'>
-              <div className='flex items-center gap-3 mb-2'>
+              <div className='flex items-center gap-3'>
                 <div className='size-8 rounded bg-accent flex items-center justify-center'>
                   <FileText className='size-4 text-primary' />
                 </div>
-                <p className='font-medium text-sm text-foreground'>
-                  Respuesta Abierta
-                </p>
+                <div>
+                  <p className='font-medium text-sm text-foreground'>
+                    Respuesta Abierta
+                  </p>
+                  <p className='text-xs text-muted-foreground'>
+                    Calificación con IA
+                  </p>
+                </div>
               </div>
-              <p className='text-xs text-muted-foreground'>
-                Calificación con IA
-              </p>
             </div>
           </div>
 
