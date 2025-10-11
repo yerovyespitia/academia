@@ -10,20 +10,37 @@ import {
 } from '../ui/card'
 import { Button } from '../ui/button'
 import { useRef, useState } from 'react'
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
+import ModalTranscription from './modal-transcription'
 
 export default function UploadNotes() {
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const { messages, sendMessage, status, error, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/multi-modal-chat',
+    }),
+  })
+  const [selectedImages, setSelectedImages] = useState<FileList | null>(null)
   const [selectedAudios, setSelectedAudios] = useState<File[]>([])
   const [isDraggingImage, setIsDraggingImage] = useState(false)
   const [isDraggingAudio, setIsDraggingAudio] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
+  const [showTranscriptionModal, setShowTranscriptionModal] = useState(false)
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files) {
-      const newImages = Array.from(files)
-      setSelectedImages(prev => [...prev, ...newImages])
+    if (files && files.length > 0) {
+      setSelectedImages(files)
+      sendMessage({
+        text: 'Es están enviando una imagen, transcribe todo el contenido de la imagen, en caso de no ver casi texto en imagen, escribe una explicación de lo que ves, pero siempre que puedas transcribir todo el texto de imagen',
+        files,
+      })
+      setShowTranscriptionModal(true)
+      setSelectedImages(null)
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
     }
   }
 
@@ -41,18 +58,36 @@ export default function UploadNotes() {
   const handleImageDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDraggingImage(false)
-    
+
     const files = e.dataTransfer.files
-    if (files) {
-      const imageFiles = Array.from(files).filter(file => 
-        file.type.startsWith('image/')
-      )
-      setSelectedImages(prev => [...prev, ...imageFiles])
+    if (files && files.length > 0) {
+      const dataTransfer = new DataTransfer()
+      Array.from(files).forEach((file) => {
+        if (file.type.startsWith('image/')) {
+          dataTransfer.items.add(file)
+        }
+      })
+      const imageFiles = dataTransfer.files
+      if (imageFiles.length > 0) {
+        setSelectedImages(imageFiles)
+        sendMessage({
+          text: 'Es están enviando una imagen, transcribe todo el contenido de la imagen, en caso de no ver casi texto en imagen, escribe una explicación de lo que ves, pero siempre que puedas transcribir todo el texto de imagen',
+          files: imageFiles,
+        })
+        setShowTranscriptionModal(true)
+        setSelectedImages(null)
+      }
     }
   }
 
   const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+    if (!selectedImages) return
+    const dataTransfer = new DataTransfer()
+    Array.from(selectedImages).forEach((file, i) => {
+      if (i !== index) dataTransfer.items.add(file)
+    })
+    const newList = dataTransfer.files
+    setSelectedImages(newList.length > 0 ? newList : null)
   }
 
   const handleImageButtonClick = () => {
@@ -64,7 +99,7 @@ export default function UploadNotes() {
     const files = e.target.files
     if (files) {
       const newAudios = Array.from(files)
-      setSelectedAudios(prev => [...prev, ...newAudios])
+      setSelectedAudios((prev) => [...prev, ...newAudios])
     }
   }
 
@@ -81,18 +116,18 @@ export default function UploadNotes() {
   const handleAudioDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDraggingAudio(false)
-    
+
     const files = e.dataTransfer.files
     if (files) {
-      const audioFiles = Array.from(files).filter(file => 
+      const audioFiles = Array.from(files).filter((file) =>
         file.type.startsWith('audio/')
       )
-      setSelectedAudios(prev => [...prev, ...audioFiles])
+      setSelectedAudios((prev) => [...prev, ...audioFiles])
     }
   }
 
   const removeAudio = (index: number) => {
-    setSelectedAudios(prev => prev.filter((_, i) => i !== index))
+    setSelectedAudios((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleAudioButtonClick = () => {
@@ -118,10 +153,10 @@ export default function UploadNotes() {
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <div 
+        <div
           className={`border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
-            isDraggingImage 
-              ? 'border-primary bg-primary/10' 
+            isDraggingImage
+              ? 'border-primary bg-primary/10'
               : 'border-border hover:border-primary/50'
           }`}
           onDragOver={handleImageDragOver}
@@ -141,7 +176,11 @@ export default function UploadNotes() {
                 Convierte escritura a mano a texto
               </p>
             </div>
-            <Button variant='brand' size="brand" type="button">
+            <Button
+              variant='brand'
+              size='brand'
+              type='button'
+            >
               Seleccionar imágenes
             </Button>
             <p className='text-xs text-muted-foreground'>
@@ -158,15 +197,15 @@ export default function UploadNotes() {
           />
         </div>
 
-        {selectedImages.length > 0 && (
+        {selectedImages && selectedImages.length > 0 && (
           <div className='space-y-2'>
             <p className='text-sm font-medium text-foreground'>
               Imágenes seleccionadas ({selectedImages.length})
             </p>
             <div className='grid grid-cols-2 gap-2'>
-              {selectedImages.map((file, index) => (
-                <div 
-                  key={index} 
+              {Array.from(selectedImages).map((file, index) => (
+                <div
+                  key={index}
                   className='relative group border border-border rounded-lg p-2 bg-secondary/30'
                 >
                   <div className='flex items-center gap-2'>
@@ -187,10 +226,10 @@ export default function UploadNotes() {
           </div>
         )}
 
-        <div 
+        <div
           className={`border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
-            isDraggingAudio 
-              ? 'border-primary bg-primary/10' 
+            isDraggingAudio
+              ? 'border-primary bg-primary/10'
               : 'border-border hover:border-primary/50'
           }`}
           onDragOver={handleAudioDragOver}
@@ -208,7 +247,11 @@ export default function UploadNotes() {
                 Convierte audio a texto
               </p>
             </div>
-            <Button variant='brand' size="brand" type="button">
+            <Button
+              variant='brand'
+              size='brand'
+              type='button'
+            >
               Seleccionar audio
             </Button>
             <p className='text-xs text-muted-foreground'>
@@ -232,8 +275,8 @@ export default function UploadNotes() {
             </p>
             <div className='grid grid-cols-2 gap-2'>
               {selectedAudios.map((file, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className='relative group border border-border rounded-lg p-2 bg-secondary/30'
                 >
                   <div className='flex items-center gap-2'>
@@ -266,6 +309,19 @@ export default function UploadNotes() {
           </div>
         </div>
       </CardContent>
+      {showTranscriptionModal && (
+        <ModalTranscription
+          error={error ? true : false}
+          messages={messages}
+          status={status}
+          setShowTranscriptionModal={(show) => {
+            if (!show) {
+              setMessages([])
+            }
+            setShowTranscriptionModal(show)
+          }}
+        />
+      )}
     </Card>
   )
 }
