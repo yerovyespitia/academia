@@ -7,7 +7,14 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: openai('gpt-5-nano'),
-      messages: convertToModelMessages(messages),
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Eres una asistente de virtual educativa que responde preguntas sobre todo lo que tenga que ver con ayudar al estudiante con lo que neecsite sobre su carrera. Siempre que sea sobre el historial académico del usuario sé breve y concisa con las respuestas.',
+        },
+        ...convertToModelMessages(messages),
+      ],
     })
 
     return result.toUIMessageStreamResponse()
