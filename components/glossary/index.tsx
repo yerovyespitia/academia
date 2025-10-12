@@ -1,4 +1,4 @@
-import { BookMarked } from 'lucide-react'
+import { BookMarked, Sparkles } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import {
@@ -14,8 +14,15 @@ export default function Glossary() {
     <Card className='bg-card border-border'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
-          <BookMarked className='w-5 h-5 text-primary' />
+          <BookMarked className='size-5 text-primary' />
           Glosarios de Estudio
+          <span>
+            <Sparkles
+              size={15}
+              fill='black'
+              strokeWidth={1}
+            />
+          </span>
         </CardTitle>
         <CardDescription>
           Términos clave organizados por materia

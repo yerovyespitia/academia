@@ -1,4 +1,4 @@
-import { Network } from 'lucide-react'
+import { Network, Sparkles } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
   Card,
@@ -13,8 +13,15 @@ export default function ConceptMap() {
     <Card className='bg-card border-border'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
-          <Network className='w-5 h-5 text-primary' />
+          <Network className='size-5 text-primary' />
           Mapas Conceptuales
+          <span>
+            <Sparkles
+              size={15}
+              fill='black'
+              strokeWidth={1}
+            />
+          </span>
         </CardTitle>
         <CardDescription>Visualiza conexiones entre conceptos</CardDescription>
       </CardHeader>
