@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,9 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
+import { glossarySchema } from './schema'
+import type { GlossarySchema } from './schema'
 
 interface GlossaryModalProps {
   open: boolean
@@ -29,9 +32,25 @@ interface GlossaryModalProps {
 
 export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
   const [selectedClass, setSelectedClass] = useState('calculus')
-  const [termCount, setTermCount] = useState([25])
+  const [termCount, setTermCount] = useState([6])
   const [generating, setGenerating] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+
+  const { submit, object } = useObject({
+    api: '/api/glossary',
+    schema: glossarySchema,
+  })
+
+  useEffect(() => {
+    const generated = (object as GlossarySchema | undefined)?.terms
+    if (generated && generated.length > 0) {
+      setGenerating(false)
+      setShowPreview(true)
+    }
+  }, [object])
+
+  const glossaryObject = object as GlossarySchema | undefined
+  const terms: GlossarySchema['terms'] = glossaryObject?.terms ?? []
 
   const classes = [
     {
@@ -59,11 +78,12 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
 
   const handleGenerate = () => {
     setGenerating(true)
-    // Simulate generation
-    setTimeout(() => {
-      setGenerating(false)
-      setShowPreview(true)
-    }, 2000)
+    const classData = classes.find((c) => c.id === selectedClass)
+    submit({
+      className: classData?.name ?? selectedClass,
+      topics: classData?.topics ?? [],
+      termCount: termCount[0],
+    })
   }
 
   const selectedClassData = classes.find((c) => c.id === selectedClass)
@@ -205,29 +225,6 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                       contextualizadas. Los términos se organizarán por temas
                       del curso.
                     </p>
-                    <div className='flex flex-wrap gap-1.5 pt-1'>
-                      <Badge
-                        variant='outline'
-                        className='text-xs bg-background/50'
-                      >
-                        <CheckCircle2 className='w-3 h-3 mr-1' />
-                        Definiciones contextualizadas
-                      </Badge>
-                      <Badge
-                        variant='outline'
-                        className='text-xs bg-background/50'
-                      >
-                        <CheckCircle2 className='w-3 h-3 mr-1' />
-                        Ejemplos incluidos
-                      </Badge>
-                      <Badge
-                        variant='outline'
-                        className='text-xs bg-background/50'
-                      >
-                        <CheckCircle2 className='w-3 h-3 mr-1' />
-                        Organizado por temas
-                      </Badge>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -264,8 +261,7 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                 </p>
               </div>
               <p className='text-sm text-muted-foreground'>
-                Se han generado {termCount[0]} términos para{' '}
-                {selectedClassData?.name}
+                Se han generado {terms.length} términos para {glossaryObject?.class ?? selectedClassData?.name}
               </p>
             </div>
 
@@ -273,107 +269,43 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
               <div className='flex items-center justify-between mb-4'>
                 <h3 className='font-semibold text-foreground flex items-center gap-2'>
                   <BookMarked className='w-5 h-5 text-primary' />
-                  Glosario: {selectedClassData?.name}
+                  Glosario: {glossaryObject?.class ?? selectedClassData?.name}
                 </h3>
                 <Badge
                   variant='outline'
                   className='bg-primary/10 text-primary'
                 >
-                  {termCount[0]} términos
+                  {terms.length} términos
                 </Badge>
               </div>
 
               <div className='space-y-3 max-h-[300px] overflow-y-auto pr-2'>
-                {/* Término 1 */}
-                <div className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <h4 className='font-semibold text-foreground'>Límite</h4>
-                    <Badge
-                      variant='outline'
-                      className='text-xs'
-                    >
-                      Fundamentos
-                    </Badge>
+                {terms.map((term, index) => (
+                  <div key={index} className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
+                    <div className='flex items-start justify-between mb-2'>
+                      <h4 className='font-semibold text-foreground'>{term.name}</h4>
+                      <Badge variant='outline' className='text-xs'>
+                        {term.topic}
+                      </Badge>
+                    </div>
+                    <p className='text-sm text-muted-foreground mb-2'>
+                      {term.definition}
+                    </p>
+                    <div className='bg-secondary/50 rounded p-2 text-xs text-muted-foreground'>
+                      <strong>Ejemplo:</strong> {term.example}
+                    </div>
                   </div>
-                  <p className='text-sm text-muted-foreground mb-2'>
-                    Valor al que se aproxima una función cuando la variable
-                    independiente se acerca a un punto específico. Es
-                    fundamental para definir continuidad y derivadas.
-                  </p>
-                  <div className='bg-secondary/50 rounded p-2 text-xs text-muted-foreground'>
-                    <strong>Ejemplo:</strong> lim(x→0) sin(x)/x = 1
-                  </div>
-                </div>
-
-                {/* Término 2 */}
-                <div className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <h4 className='font-semibold text-foreground'>Derivada</h4>
-                    <Badge
-                      variant='outline'
-                      className='text-xs'
-                    >
-                      Cálculo Diferencial
-                    </Badge>
-                  </div>
-                  <p className='text-sm text-muted-foreground mb-2'>
-                    Tasa de cambio instantánea de una función. Representa la
-                    pendiente de la recta tangente a la curva en un punto dado.
-                  </p>
-                  <div className='bg-secondary/50 rounded p-2 text-xs text-muted-foreground'>
-                    <strong>Ejemplo:</strong> Si f(x) = x², entonces f'(x) = 2x
-                  </div>
-                </div>
-
-                {/* Término 3 */}
-                <div className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <h4 className='font-semibold text-foreground'>
-                      Continuidad
-                    </h4>
-                    <Badge
-                      variant='outline'
-                      className='text-xs'
-                    >
-                      Fundamentos
-                    </Badge>
-                  </div>
-                  <p className='text-sm text-muted-foreground mb-2'>
-                    Una función es continua en un punto si el límite existe, la
-                    función está definida en ese punto, y ambos valores
-                    coinciden.
-                  </p>
-                  <div className='bg-secondary/50 rounded p-2 text-xs text-muted-foreground'>
-                    <strong>Condición:</strong> lim(x→a) f(x) = f(a)
-                  </div>
-                </div>
-
-                {/* Término 4 */}
-                <div className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <h4 className='font-semibold text-foreground'>Integral</h4>
-                    <Badge
-                      variant='outline'
-                      className='text-xs'
-                    >
-                      Cálculo Integral
-                    </Badge>
-                  </div>
-                  <p className='text-sm text-muted-foreground mb-2'>
-                    Operación inversa de la derivada. Representa el área bajo la
-                    curva de una función en un intervalo dado.
-                  </p>
-                  <div className='bg-secondary/50 rounded p-2 text-xs text-muted-foreground'>
-                    <strong>Ejemplo:</strong> ∫ 2x dx = x² + C
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
             <div className='flex gap-3'>
               <Button
                 variant='outline'
-                onClick={() => setShowPreview(false)}
+                onClick={() => {
+                  setGenerating(false)
+                  setShowPreview(false)
+                }}
                 className='flex-1 bg-transparent'
               >
                 Generar otro
