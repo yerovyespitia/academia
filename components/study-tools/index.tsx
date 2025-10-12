@@ -1,5 +1,5 @@
 import UploadNotes from '../upload-notes'
-import QuizzGenerator from '../quizz-generator'
+import QuizGenerator from '../quiz-generator'
 import Attendance from '../attendance'
 import Glossary from '../glossary'
 import ConceptMap from '../concept-map'
@@ -19,7 +19,7 @@ export default function StudyTools() {
       </section>
       <section className='mb-8'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          <QuizzGenerator />
+          <QuizGenerator />
           <Attendance />
         </div>
       </section>
