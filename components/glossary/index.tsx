@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import { BookMarked, Sparkles } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -8,8 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card'
+import { GlossaryModal } from './glossary-modal'
 
 export default function Glossary() {
+  const [open, setOpen] = useState(false)
+
   return (
     <Card className='bg-card border-border'>
       <CardHeader>
@@ -80,11 +86,16 @@ export default function Glossary() {
           <Button
             variant='outline'
             className='w-full mt-2 bg-transparent'
+            onClick={() => setOpen(true)}
           >
-            <BookMarked className='w-4 h-4 mr-2' />
+            <BookMarked className='size-4 mr-2' />
             Crear nuevo glosario
           </Button>
         </div>
+        <GlossaryModal
+          open={open}
+          onOpenChange={setOpen}
+        />
       </CardContent>
     </Card>
   )
