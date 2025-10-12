@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import {
   Brain,
   Target,
@@ -14,8 +17,11 @@ import {
   CardContent,
 } from '../ui/card'
 import { Button } from '../ui/button'
+import { QuizModal } from './quiz-modal'
 
-export default function QuizzGenerator() {
+export default function QuizGenerator() {
+  const [open, setOpen] = useState(false)
+
   return (
     <Card className='lg:col-span-2 bg-card border-border'>
       <CardHeader>
@@ -76,6 +82,7 @@ export default function QuizzGenerator() {
             </p>
             <div className='space-y-2'>
               <Button
+                onClick={() => setOpen(true)}
                 variant='outline'
                 size='sm'
                 className='w-full justify-start'
@@ -84,6 +91,7 @@ export default function QuizzGenerator() {
                 Mis apuntes
               </Button>
               <Button
+                onClick={() => setOpen(true)}
                 variant='outline'
                 size='sm'
                 className='w-full justify-start'
@@ -92,6 +100,7 @@ export default function QuizzGenerator() {
                 Archivos subidos
               </Button>
               <Button
+                onClick={() => setOpen(true)}
                 variant='outline'
                 size='sm'
                 className='w-full justify-start'
@@ -116,6 +125,10 @@ export default function QuizzGenerator() {
             </div>
           </div>
         </div>
+        <QuizModal
+          open={open}
+          onOpenChange={setOpen}
+        />
       </CardContent>
     </Card>
   )
