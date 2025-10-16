@@ -1,13 +1,27 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { CheckCircle2, XCircle, ArrowLeft, Trophy, Target } from 'lucide-react'
+import {
+  CheckCircle2,
+  XCircle,
+  ArrowLeft,
+  Trophy,
+  Target,
+  Volume2,
+  RotateCcw,
+  Loader2,
+} from 'lucide-react'
 import type { QuizSchema } from '../quiz-modal/schema'
+
+// Ensure acronyms like POO/HTML are read letter-by-letter by TTS
+function spellAcronyms(text: string): string {
+  return text.replace(/\b([A-Z]{2,5})\b/g, (match) => match.split('').join(' '))
+}
 
 // Fallback mock data to ensure page works without storage
 const mockQuiz: QuizSchema = {
@@ -84,6 +98,92 @@ export default function QuizRunner({
   )
   const [showResults, setShowResults] = useState(false)
 
+  const [isLoading, setIsLoading] = useState(false)
+  const [_error, setError] = useState<string | null>(null)
+  const [hasAudio, setHasAudio] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  const audioUrlRef = useRef<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const handleSpeech = async (text: string) => {
+    setIsLoading(true)
+    setError(null)
+
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current)
+      audioRef.current = null
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+
+    try {
+      const response = await fetch('/api/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate speech')
+      }
+
+      const blob = await response.blob()
+      audioUrlRef.current = URL.createObjectURL(blob)
+      audioRef.current = new Audio(audioUrlRef.current)
+
+      setHasAudio(true)
+      // Track play/pause state
+      if (audioRef.current) {
+        audioRef.current.onplay = () => setIsPlaying(true)
+        audioRef.current.onpause = () => setIsPlaying(false)
+        audioRef.current.onended = () => setIsPlaying(false)
+        audioRef.current.play()
+      }
+    } catch (error) {
+      console.error('Error generating speech: ', error)
+      setError('Error generating speech')
+      setHasAudio(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const replayAudio = () => {
+    if (audioUrlRef.current) {
+      audioRef.current!.currentTime = 0
+      audioRef.current?.play()
+    }
+  }
+
+  useEffect(() => {
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current!)
+    }
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+    }
+  }, [])
+
+  // Stop and reset audio state when navigating between questions
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current)
+      audioUrlRef.current = null
+    }
+    setHasAudio(false)
+    setIsPlaying(false)
+  }, [currentQuestion])
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem(`quiz:${id}`)
@@ -134,6 +234,7 @@ export default function QuizRunner({
   }
 
   const progress = ((currentQuestion + 1) / quiz.questions.length) * 100
+  const disableInteractions = isLoading || isPlaying
 
   if (showResults) {
     const score = calculateScore()
@@ -275,12 +376,58 @@ export default function QuizRunner({
               </h1>
               <p className='text-sm text-muted-foreground'>{quiz.class}</p>
             </div>
-            <Badge
-              variant='secondary'
-              className='text-lg'
-            >
-              {currentQuestion + 1}/{quiz.questions.length}
-            </Badge>
+            <div className='flex items-center gap-2'>
+              <Badge
+                variant='secondary'
+                className='text-lg'
+              >
+                {currentQuestion + 1}/{quiz.questions.length}
+              </Badge>
+              {/* Show play only if no audio has been generated yet */}
+              {!hasAudio && (
+                <Button
+                  variant='outline'
+                  size='icon'
+                  disabled={disableInteractions}
+                  onClick={() => {
+                    const q = quiz.questions[currentQuestion]
+                    const optionsText = q.options
+                      .map(
+                        (opt, i) =>
+                          `Opción ${String.fromCharCode(65 + i)}: ${spellAcronyms(
+                            opt
+                          )}`
+                      )
+                      .join('. ')
+                    const speechText = `Pregunta ${
+                      currentQuestion + 1
+                    }: ${spellAcronyms(q.question)}. ${optionsText}.`
+                    handleSpeech(speechText)
+                  }}
+                  aria-label='Leer pregunta'
+                  className='bg-card'
+                >
+                  {isLoading ? (
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                  ) : (
+                    <Volume2 className='w-4 h-4' />
+                  )}
+                </Button>
+              )}
+              {/* Replay button appears only when audio was generated */}
+              {hasAudio && (
+                <Button
+                  variant='outline'
+                  size='icon'
+                  disabled={disableInteractions}
+                  onClick={replayAudio}
+                  aria-label='Reproducir de nuevo'
+                  className='bg-card'
+                >
+                  <RotateCcw className='w-4 h-4' />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className='space-y-2'>
@@ -312,10 +459,13 @@ export default function QuizRunner({
               <button
                 key={index}
                 onClick={() => handleSelectAnswer(index)}
+                disabled={disableInteractions}
                 className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                   selectedAnswer === index
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50 bg-card'
+                } ${
+                  disableInteractions ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <div className='flex items-center gap-3'>
@@ -346,7 +496,7 @@ export default function QuizRunner({
           <Button
             variant='outline'
             onClick={handlePrevious}
-            disabled={currentQuestion === 0}
+            disabled={currentQuestion === 0 || disableInteractions}
             className='bg-transparent'
           >
             Anterior
@@ -357,7 +507,7 @@ export default function QuizRunner({
           {currentQuestion === quiz.questions.length - 1 ? (
             <Button
               onClick={handleFinish}
-              disabled={selectedAnswer === null}
+              disabled={selectedAnswer === null || disableInteractions}
               className='bg-primary hover:bg-primary/90'
             >
               Terminar Quiz
@@ -365,7 +515,7 @@ export default function QuizRunner({
           ) : (
             <Button
               onClick={handleNext}
-              disabled={selectedAnswer === null}
+              disabled={selectedAnswer === null || disableInteractions}
               className='bg-primary hover:bg-primary/90'
             >
               Siguiente
