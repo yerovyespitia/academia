@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Network, Sparkles } from 'lucide-react'
+import { Map, Network, Sparkles } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
   Card,
@@ -35,32 +35,8 @@ export default function ConceptMap() {
         <div className='space-y-4'>
           <div className='bg-secondary/30 rounded-lg p-4 border border-border'>
             <div className='flex items-center justify-center h-32 mb-3'>
-              <div className='relative'>
-                <div className='w-16 h-16 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center'>
-                  <span className='text-xs font-medium text-primary'>
-                    Derivadas
-                  </span>
-                </div>
-                <div className='absolute -top-8 -right-12 w-12 h-12 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center'>
-                  <span className='text-[10px] font-medium text-accent'>
-                    Límites
-                  </span>
-                </div>
-                <div className='absolute -bottom-8 -right-12 w-12 h-12 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center'>
-                  <span className='text-[10px] font-medium text-accent'>
-                    Integrales
-                  </span>
-                </div>
-                <div className='absolute -top-8 -left-12 w-12 h-12 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center'>
-                  <span className='text-[10px] font-medium text-accent'>
-                    Funciones
-                  </span>
-                </div>
-              </div>
+              <Map className='size-16 text-primary' />
             </div>
-            <p className='text-center text-sm text-muted-foreground'>
-              Mapa: Cálculo Diferencial
-            </p>
           </div>
 
           <Button

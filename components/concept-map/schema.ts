@@ -7,6 +7,7 @@ export const conceptMapSchema = z.object({
       id: z.string(),
       label: z.string(),
       description: z.string().optional(),
+      level: z.number().int().min(0).max(12).optional(),
     })
   ),
   edges: z.array(

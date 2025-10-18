@@ -83,15 +83,15 @@ export function ConceptMapGeneratorModal({
     if (!ready) return
     try {
       const mapId = `${selectedClass}-${Date.now()}`
-      localStorage.setItem(`concept-map:${mapId}`, JSON.stringify(object))
+      const payload = { map: object, depth: complexity[0] }
+      localStorage.setItem(`concept-map:${mapId}`, JSON.stringify(payload))
       setIsGenerating(false)
       onOpenChange(false)
       router.push(`/concept-maps/${mapId}`)
     } catch {
       setIsGenerating(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [object, isGenerating])
+  }, [object, isGenerating, complexity])
 
   return (
     <Dialog
@@ -167,7 +167,7 @@ export function ConceptMapGeneratorModal({
               value={complexity}
               onValueChange={setComplexity}
               min={2}
-              max={5}
+              max={4}
               step={1}
               className='w-full'
             />

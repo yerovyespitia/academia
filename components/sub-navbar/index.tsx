@@ -18,7 +18,7 @@ const links = [
   },
   {
     label: 'Glosarios',
-    href: '/',
+    href: '/glossaries',
   },
   {
     label: 'Mapas conceptuales',
