@@ -24,7 +24,7 @@ export default function ModalTranscription({
   audioTranscript,
   setShowTranscriptionModal,
 }: {
-  mode?: 'image' | 'audio'
+  mode?: 'image' | 'audio' | 'pdf'
   error: boolean
   messages: any
   status: string
@@ -185,7 +185,9 @@ export default function ModalTranscription({
                 <Loader2 className='w-4 h-4 animate-spin' />
                 {mode === 'image'
                   ? 'Procesando imagen...'
-                  : 'Procesando audio...'}
+                  : mode === 'audio'
+                    ? 'Procesando audio...'
+                    : 'Procesando documento...'}
               </div>
             )}
             {error && (
