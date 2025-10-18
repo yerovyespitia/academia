@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import { Network, Sparkles } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -7,8 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card'
+import { ConceptMapGeneratorModal } from '@/components/concept-map/concept-map-generator/modal'
 
 export default function ConceptMap() {
+  const [open, setOpen] = useState(false)
+
   return (
     <Card className='bg-card border-border'>
       <CardHeader>
@@ -57,7 +63,10 @@ export default function ConceptMap() {
             </p>
           </div>
 
-          <Button className='w-full bg-primary hover:bg-primary/90'>
+          <Button
+            className='w-full bg-primary hover:bg-primary/90'
+            onClick={() => setOpen(true)}
+          >
             <Network className='w-4 h-4 mr-2' />
             Generar mapa desde documentos
           </Button>
@@ -68,6 +77,10 @@ export default function ConceptMap() {
             </p>
           </div>
         </div>
+        <ConceptMapGeneratorModal
+          open={open}
+          onOpenChange={setOpen}
+        />
       </CardContent>
     </Card>
   )

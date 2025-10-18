@@ -14,7 +14,7 @@ const links = [
   },
   {
     label: 'Quizzes',
-    href: '/',
+    href: '/quizzes',
   },
   {
     label: 'Glosarios',
@@ -22,7 +22,7 @@ const links = [
   },
   {
     label: 'Mapas conceptuales',
-    href: '/',
+    href: '/concept-maps',
   },
 ]
 export default function SubNavbar() {
