@@ -29,6 +29,8 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
     window.location.href = '/login'
   }
 
+  const currentPeriod = semesters?.[0]?.period
+
   return (
     <nav className='border-b border-muted-foreground/30'>
       <header className='max-w-7xl mx-auto flex justify-between items-center p-4'>
@@ -36,12 +38,14 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
           <h1 className='text-2xl font-bold'>AcademIA</h1>
         </Link>
         <div className='flex items-center gap-4 relative' ref={menuRef}>
-          <Badge
-            variant='outline'
-            className='bg-primary/10 text-primary border-primary/20'
-          >
-            {semesters[0].period}
-          </Badge>
+          {currentPeriod && (
+            <Badge
+              variant='outline'
+              className='bg-primary/10 text-primary border-primary/20'
+            >
+              {currentPeriod}
+            </Badge>
+          )}
           <div>
             <div
               className='w-10 h-10 rounded-full bg-muted-foreground/30 flex items-center justify-center text-sm font-semibold cursor-pointer hover:bg-muted-foreground/40'
