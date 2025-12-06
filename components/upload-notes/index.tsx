@@ -1,9 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
+
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { FileText, ImageIcon, Mic, Sparkles, Upload, X } from 'lucide-react'
+import { ImageIcon, Mic, Sparkles, Upload, X } from 'lucide-react'
+
+import { Button } from '../ui/button'
 import {
   Card,
   CardContent,
@@ -11,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card'
-import { Button } from '../ui/button'
 import ModalTranscription from './modal-transcription'
 
 type TranscriptResult = {
@@ -35,7 +37,7 @@ export default function UploadNotes() {
   const audioInputRef = useRef<HTMLInputElement>(null)
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false)
   const [transcriptionMode, setTranscriptionMode] = useState<'image' | 'audio'>(
-    'image'
+    'image',
   )
   const [transcriptAudio, setTranscriptAudio] =
     useState<TranscriptResult | null>(null)
@@ -179,7 +181,7 @@ export default function UploadNotes() {
 
     // Filtra solo audios y toma solo el primero para asegurar uno a la vez
     const audioFiles = Array.from(files).filter((file) =>
-      file.type.startsWith('audio/')
+      file.type.startsWith('audio/'),
     )
     if (audioFiles.length === 0) return
 
@@ -205,11 +207,7 @@ export default function UploadNotes() {
           <Upload className='size-5 text-primary' />
           Subir Apuntes
           <span>
-            <Sparkles
-              size={15}
-              fill='black'
-              strokeWidth={1}
-            />
+            <Sparkles size={15} fill='black' strokeWidth={1} />
           </span>
         </CardTitle>
         <CardDescription>
@@ -240,11 +238,7 @@ export default function UploadNotes() {
                 Convierte escritura a mano a texto
               </p>
             </div>
-            <Button
-              variant='brand'
-              size='brand'
-              type='button'
-            >
+            <Button variant='brand' size='brand' type='button'>
               Seleccionar imágenes
             </Button>
             <p className='text-xs text-muted-foreground'>
@@ -311,11 +305,7 @@ export default function UploadNotes() {
                 Convierte audio a texto
               </p>
             </div>
-            <Button
-              variant='brand'
-              size='brand'
-              type='button'
-            >
+            <Button variant='brand' size='brand' type='button'>
               Seleccionar audio
             </Button>
             <p className='text-xs text-muted-foreground'>
@@ -354,18 +344,6 @@ export default function UploadNotes() {
             </div>
           </div>
         )}
-
-        <div className='bg-secondary/30 rounded-lg p-3 border border-border'>
-          <div className='flex items-start gap-2'>
-            <FileText className='w-4 h-4 text-primary mt-0.5' />
-            <div className='text-xs'>
-              <p className='text-foreground font-medium mb-1'>Soporte LaTeX</p>
-              <p className='text-muted-foreground'>
-                Matemáticas y física se formatean automáticamente
-              </p>
-            </div>
-          </div>
-        </div>
       </CardContent>
       {showTranscriptionModal && (
         <ModalTranscription

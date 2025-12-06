@@ -1,12 +1,11 @@
+import { SemesterGrades, SubjectGrade } from '@/types'
 import {
   CheckCircle2,
-  Radical,
   TrendingUp,
   AlertCircle,
   type LucideIcon,
 } from 'lucide-react'
-import { Button } from '../ui/button'
-import { Progress } from '../ui/progress'
+
 import { Badge } from '../ui/badge'
 import {
   Card,
@@ -15,49 +14,12 @@ import {
   CardDescription,
   CardContent,
 } from '../ui/card'
+import { Progress } from '../ui/progress'
 
-type Subject = {
-  id: string
-  name: string
-  code: string
-  grade: number
-  progress: number
-  requiredGrade: number
-  status: 'excellent' | 'good' | 'warning'
-}
-
-const subjects: Subject[] = [
-  {
-    id: '1',
-    name: 'Cálculo Diferencial',
-    code: 'MAT-101',
-    grade: 4.2,
-    progress: 84,
-    requiredGrade: 3.5,
-    status: 'good',
-  },
-  {
-    id: '2',
-    name: 'Física Mecánica',
-    code: 'FIS-201',
-    grade: 3.8,
-    progress: 76,
-    requiredGrade: 4.2,
-    status: 'warning',
-  },
-  {
-    id: '3',
-    name: 'Programación I',
-    code: 'CS-101',
-    grade: 4.7,
-    progress: 94,
-    requiredGrade: 2.8,
-    status: 'excellent',
-  },
-]
+type Status = 'excellent' | 'good' | 'warning'
 
 const statusConfig: Record<
-  Subject['status'],
+  Status,
   {
     badgeClass: string
     requiredGradeClass: string
@@ -89,7 +51,60 @@ const statusConfig: Record<
   },
 }
 
-export default function GradesPanel() {
+function computeMetricsForSubject(subject: SubjectGrade) {
+  const completedGrades = subject.grades.filter(
+    (g) => g.max_score > 0 && g.score !== null && g.score !== undefined,
+  )
+  const completedWeight = completedGrades.reduce(
+    (acc, g) => acc + (g.weight || 0),
+    0,
+  )
+  const completedWeightedSum = completedGrades.reduce((acc, g) => {
+    const weightFraction = (g.weight || 0) / 100
+    const performanceFraction = Math.max(0, Math.min(1, g.score / g.max_score))
+    return acc + weightFraction * performanceFraction
+  }, 0)
+
+  const progress = Math.round(Math.max(0, Math.min(100, completedWeight)))
+
+  // Grade carried so far over total (0..5), treating remaining as 0
+  const currentGrade = Number((5 * completedWeightedSum).toFixed(1))
+
+  // Remaining fraction is based on full 100% minus what is already completed
+  const remainingFraction = Math.max(0, (100 - completedWeight) / 100)
+  const passThreshold = 3
+  let neededScore: number
+  if (remainingFraction > 0) {
+    const completedContribution = 5 * completedWeightedSum
+    const xNeeded =
+      (passThreshold - completedContribution) / (5 * remainingFraction)
+    neededScore = Number((xNeeded * 5).toFixed(1))
+  } else {
+    const completedContribution = 5 * completedWeightedSum
+    // If there is no remaining fraction, either already passed (need 0) or impossible
+    neededScore = completedContribution >= passThreshold ? 0 : Infinity
+  }
+
+  const status: Status =
+    currentGrade < 3 ? 'warning' : currentGrade < 4 ? 'good' : 'excellent'
+
+  return { currentGrade, progress, neededScore, status }
+}
+
+async function getSemesterGrades(): Promise<SemesterGrades | null> {
+  const data = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/grades/semester/1`,
+  )
+  if (data.ok) {
+    const semesterGrades = (await data.json()) as SemesterGrades
+    return semesterGrades
+  }
+  return null
+}
+
+export default async function GradesPanel() {
+  const semesterGrades = await getSemesterGrades()
+
   return (
     <div>
       <header className='flex justify-between items-center mb-4'>
@@ -99,17 +114,12 @@ export default function GradesPanel() {
             Sigue dinamicamente el progreso académico
           </p>
         </div>
-        <Button
-          variant='brand'
-          size='brand'
-        >
-          <Radical className='w-4 h-4' />
-          Calcular notas
-        </Button>
       </header>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6'>
-        {subjects.map((subject) => {
-          const config = statusConfig[subject.status]
+        {(semesterGrades?.subjects ?? []).map((subject) => {
+          const { currentGrade, progress, status } =
+            computeMetricsForSubject(subject)
+          const config = statusConfig[status]
           const StatusIcon = config.icon
 
           return (
@@ -124,7 +134,7 @@ export default function GradesPanel() {
                     <CardDescription>{subject.code}</CardDescription>
                   </div>
                   <Badge className={config.badgeClass}>
-                    {subject.grade.toFixed(1)}/5.0
+                    {currentGrade.toFixed(1)}/5.0
                   </Badge>
                 </div>
               </CardHeader>
@@ -134,23 +144,10 @@ export default function GradesPanel() {
                     <div className='flex justify-between text-sm mb-1'>
                       <span className='text-muted-foreground'>Progreso</span>
                       <span className='text-foreground font-medium'>
-                        {subject.progress}%
+                        {progress}%
                       </span>
                     </div>
-                    <Progress
-                      value={subject.progress}
-                      className='h-2'
-                    />
-                  </div>
-                  <div className='bg-secondary/50 rounded-lg p-3 border border-border'>
-                    <p className='text-xs text-muted-foreground mb-1'>
-                      Nota necesaria para aprobar:
-                    </p>
-                    <p
-                      className={`text-2xl font-bold ${config.requiredGradeClass}`}
-                    >
-                      {subject.requiredGrade.toFixed(1)}
-                    </p>
+                    <Progress value={progress} className='h-2' />
                   </div>
                   <div className='flex items-center gap-2 text-xs'>
                     <StatusIcon className={`w-4 h-4 ${config.iconClass}`} />

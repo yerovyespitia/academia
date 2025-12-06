@@ -5,7 +5,6 @@ import {
   Brain,
   Target,
   FileText,
-  Upload,
   BookOpen,
   Sparkles,
 } from 'lucide-react'
@@ -89,15 +88,6 @@ export default function QuizGenerator() {
               >
                 <FileText className='size-4 mr-2' />
                 Mis apuntes
-              </Button>
-              <Button
-                onClick={() => setOpen(true)}
-                variant='outline'
-                size='sm'
-                className='w-full justify-start'
-              >
-                <Upload className='size-4 mr-2' />
-                Archivos subidos
               </Button>
               <Button
                 onClick={() => setOpen(true)}

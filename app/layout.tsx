@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import Navbar from '@/components/navbar'
-import SubNavbar from '@/components/sub-navbar'
+
+import NavbarWrapper from '@/components/navbar-wrapper'
+import { Semester } from '@/types'
+
 import './globals.css'
 
 const geistSans = Geist({
@@ -19,18 +21,30 @@ export const metadata: Metadata = {
   description: 'Plataforma inteligente de apoyo académico para estudiantes',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL
+  let semesters: Semester[] = []
+
+  if (baseUrl) {
+    try {
+      const res = await fetch(`${baseUrl}/semesters/user/1`)
+      if (res.ok) {
+        semesters = await res.json()
+      }
+    } catch {
+      console.error('Error fetching semesters')
+    }
+  }
   return (
     <html lang='en'>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
-        <SubNavbar />
+        <NavbarWrapper semesters={semesters} />
         {children}
       </body>
     </html>

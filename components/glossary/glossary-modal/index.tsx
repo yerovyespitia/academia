@@ -1,6 +1,11 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+
 import { useState, useEffect } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -8,11 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Slider } from '@/components/ui/slider'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import {
   BookMarked,
   BookOpen,
@@ -21,7 +25,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
-import { experimental_useObject as useObject } from '@ai-sdk/react'
+
 import { glossarySchema } from './schema'
 import type { GlossarySchema } from './schema'
 
@@ -31,7 +35,18 @@ interface GlossaryModalProps {
 }
 
 export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
-  const [selectedClass, setSelectedClass] = useState('calculus')
+  const router = useRouter()
+  const [subjects, setSubjects] = useState<
+    Array<{
+      id: number
+      name: string
+      code?: string
+      glossary?: Array<{ topic?: string }>
+    }>
+  >([])
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(
+    null,
+  )
   const [termCount, setTermCount] = useState([6])
   const [generating, setGenerating] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -52,47 +67,49 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
   const glossaryObject = object as GlossarySchema | undefined
   const terms: GlossarySchema['terms'] = glossaryObject?.terms ?? []
 
-  const classes = [
-    {
-      id: 'calculus',
-      name: 'Cálculo Diferencial',
-      code: 'MAT-101',
-      syllabusAvailable: true,
-      topics: ['Límites', 'Derivadas', 'Integrales', 'Continuidad'],
-    },
-    {
-      id: 'physics',
-      name: 'Física Mecánica',
-      code: 'FIS-201',
-      syllabusAvailable: true,
-      topics: ['Cinemática', 'Dinámica', 'Energía', 'Momento'],
-    },
-    {
-      id: 'programming',
-      name: 'Programación I',
-      code: 'CS-101',
-      syllabusAvailable: true,
-      topics: ['Variables', 'Funciones', 'Estructuras de Control', 'POO'],
-    },
-  ]
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/glossary/user/1`,
+        )
+        const data = await res.json()
+        const subjectsFromApi: Array<{
+          id: number
+          name: string
+          code?: string
+          glossary?: Array<{ topic?: string }>
+        }> = Array.isArray(data?.subjects)
+          ? data.subjects
+          : (data?.subjects ?? [])
+        setSubjects(subjectsFromApi)
+        if (!selectedSubjectId && subjectsFromApi.length > 0) {
+          setSelectedSubjectId(subjectsFromApi[0].id)
+        }
+      } catch {
+        setSubjects([])
+      }
+    }
+    fetchSubjects()
+  }, [])
 
   const handleGenerate = () => {
     setGenerating(true)
-    const classData = classes.find((c) => c.id === selectedClass)
+    const subject = subjects.find((s) => s.id === selectedSubjectId)
+    const derivedTopics = Array.from(
+      new Set((subject?.glossary ?? []).map((g) => g.topic).filter(Boolean)),
+    ) as string[]
     submit({
-      className: classData?.name ?? selectedClass,
-      topics: classData?.topics ?? [],
+      className: subject?.name ?? 'Glosario',
+      topics: derivedTopics,
       termCount: termCount[0],
     })
   }
 
-  const selectedClassData = classes.find((c) => c.id === selectedClass)
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId)
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-xl'>
@@ -106,44 +123,41 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
 
         {!showPreview ? (
           <div className='space-y-6 py-4'>
-            {/* Selección de Clase */}
+            {/* Selección de Clase (Subjects desde API) */}
             <div className='space-y-3'>
               <Label className='text-base font-semibold text-foreground'>
                 Selecciona la clase
               </Label>
               <RadioGroup
-                value={selectedClass}
-                onValueChange={setSelectedClass}
+                value={selectedSubjectId ? String(selectedSubjectId) : ''}
+                onValueChange={(v) => setSelectedSubjectId(Number(v))}
               >
-                {classes.map((classItem) => (
+                {subjects.map((subjectItem) => (
                   <div
-                    key={classItem.id}
+                    key={subjectItem.id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedClass === classItem.id
+                      selectedSubjectId === subjectItem.id
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setSelectedClass(classItem.id)}
+                    onClick={() => setSelectedSubjectId(subjectItem.id)}
                   >
                     <div className='flex items-start gap-3'>
                       <RadioGroupItem
-                        value={classItem.id}
-                        id={classItem.id}
+                        value={String(subjectItem.id)}
+                        id={String(subjectItem.id)}
                         className='mt-1'
                       />
                       <div className='flex-1'>
                         <div className='flex items-center justify-between mb-2'>
                           <Label
-                            htmlFor={classItem.id}
+                            htmlFor={String(subjectItem.id)}
                             className='font-semibold text-foreground cursor-pointer'
                           >
-                            {classItem.name}
+                            {subjectItem.name}
                           </Label>
-                          <Badge
-                            variant='outline'
-                            className='text-xs'
-                          >
-                            {classItem.code}
+                          <Badge variant='outline' className='text-xs'>
+                            {subjectItem.code ?? ''}
                           </Badge>
                         </div>
                         <div className='flex items-center gap-2 mb-2'>
@@ -154,15 +168,23 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                           <CheckCircle2 className='w-4 h-4 text-green-500' />
                         </div>
                         <div className='flex flex-wrap gap-1.5'>
-                          {classItem.topics.map((topic) => (
-                            <Badge
-                              key={topic}
-                              variant='outline'
-                              className='text-xs bg-secondary/50'
-                            >
-                              {topic}
-                            </Badge>
-                          ))}
+                          {Array.from(
+                            new Set(
+                              (subjectItem.glossary ?? [])
+                                .map((g) => g.topic)
+                                .filter(Boolean),
+                            ),
+                          )
+                            .slice(0, 6)
+                            .map((topic) => (
+                              <Badge
+                                key={topic}
+                                variant='outline'
+                                className='text-xs bg-secondary/50'
+                              >
+                                {topic}
+                              </Badge>
+                            ))}
                         </div>
                       </div>
                     </div>
@@ -208,7 +230,7 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
             </div>
 
             {/* Información del Syllabus */}
-            {selectedClassData && (
+            {selectedSubject && (
               <div className='bg-primary/5 border border-primary/20 rounded-lg p-4'>
                 <div className='flex items-start gap-3'>
                   <div className='w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0'>
@@ -220,7 +242,7 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                     </p>
                     <p className='text-xs text-muted-foreground'>
                       La IA analizará el syllabus de{' '}
-                      <strong>{selectedClassData.name}</strong> para identificar
+                      <strong>{selectedSubject.name}</strong> para identificar
                       los términos más importantes y crear definiciones claras y
                       contextualizadas. Los términos se organizarán por temas
                       del curso.
@@ -261,7 +283,8 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                 </p>
               </div>
               <p className='text-sm text-muted-foreground'>
-                Se han generado {terms.length} términos para {glossaryObject?.class ?? selectedClassData?.name}
+                Se han generado {terms.length} términos para{' '}
+                {glossaryObject?.class ?? selectedSubject?.name}
               </p>
             </div>
 
@@ -269,21 +292,23 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
               <div className='flex items-center justify-between mb-4'>
                 <h3 className='font-semibold text-foreground flex items-center gap-2'>
                   <BookMarked className='w-5 h-5 text-primary' />
-                  Glosario: {glossaryObject?.class ?? selectedClassData?.name}
+                  Glosario: {glossaryObject?.class ?? selectedSubject?.name}
                 </h3>
-                <Badge
-                  variant='outline'
-                  className='bg-primary/10 text-primary'
-                >
+                <Badge variant='outline' className='bg-primary/10 text-primary'>
                   {terms.length} términos
                 </Badge>
               </div>
 
               <div className='space-y-3 max-h-[300px] overflow-y-auto pr-2'>
                 {terms.map((term, index) => (
-                  <div key={index} className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'>
+                  <div
+                    key={index}
+                    className='border border-border rounded-lg p-3 bg-card hover:border-primary/50 transition-colors'
+                  >
                     <div className='flex items-start justify-between mb-2'>
-                      <h4 className='font-semibold text-foreground'>{term.name}</h4>
+                      <h4 className='font-semibold text-foreground'>
+                        {term.name}
+                      </h4>
                       <Badge variant='outline' className='text-xs'>
                         {term.topic}
                       </Badge>
@@ -311,7 +336,40 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                 Generar otro
               </Button>
               <Button
-                onClick={() => onOpenChange(false)}
+                onClick={async () => {
+                  if (!selectedSubjectId) {
+                    onOpenChange(false)
+                    return
+                  }
+                  const body = {
+                    class: glossaryObject?.class ?? 'Glosario',
+                    subject_id: selectedSubjectId,
+                    terms: terms.map((t) => ({
+                      name: t.name,
+                      definition: t.definition,
+                      example: t.example,
+                      topic: t.topic,
+                    })),
+                  }
+                  try {
+                    const resp = await fetch(
+                      `${process.env.NEXT_PUBLIC_API_URL}/glossary`,
+                      {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                      },
+                    )
+                    if (resp.ok) {
+                      onOpenChange(false)
+                      router.push(`/glossaries/${selectedSubjectId}`)
+                    } else {
+                      onOpenChange(false)
+                    }
+                  } catch {
+                    onOpenChange(false)
+                  }
+                }}
                 className='flex-1 bg-primary hover:bg-primary/90'
               >
                 <BookMarked className='w-4 h-4 mr-2' />

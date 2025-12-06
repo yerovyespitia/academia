@@ -1,9 +1,9 @@
-import MyDocuments from '@/components/my-documents'
+import LoginPage from '@/components/login-page'
 
 export default function Page() {
   return (
     <main className='max-w-7xl mx-auto p-4'>
-      <MyDocuments />
+      <LoginPage />
     </main>
   )
 }
