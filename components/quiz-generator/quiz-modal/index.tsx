@@ -269,7 +269,7 @@ export function QuizModal({ open, onOpenChange }: QuizModalProps) {
                     className='border border-border rounded-lg p-3 bg-card'
                   >
                     <p className='font-medium text-foreground mb-2'>
-                      {(q?.id ?? qIdx) as number}. {q?.question ?? 'Pregunta'}
+                      {qIdx + 1}. {q?.question ?? 'Pregunta'}
                     </p>
                     <ul className='text-sm text-muted-foreground grid grid-cols-1 gap-1'>
                       {(q?.options ?? []).map((opt, idx) => (
@@ -298,14 +298,15 @@ export function QuizModal({ open, onOpenChange }: QuizModalProps) {
               <Button
                 onClick={() => {
                   if (!generatedQuiz) return
+                  const quizId = generatedQuiz.id ?? `quiz-${Date.now()}`
                   try {
                     localStorage.setItem(
-                      `quiz:${generatedQuiz.id}`,
+                      `quiz:${quizId}`,
                       JSON.stringify(generatedQuiz)
                     )
                   } catch {}
                   onOpenChange(false)
-                  router.push(`/quizzes/${generatedQuiz.id}`)
+                  router.push(`/quizzes/${quizId}`)
                 }}
                 className='flex-1 bg-primary hover:bg-primary/90'
               >
