@@ -7,6 +7,7 @@ export const quizSchema = z.object({
   questions: z
     .array(
       z.object({
+        id: z.union([z.string(), z.number()]).optional(),
         question: z.string().min(1, 'La pregunta no puede estar vacía'),
         options: z
           .array(z.string().min(1, 'La opción no puede estar vacía'))
