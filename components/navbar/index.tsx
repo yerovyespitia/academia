@@ -1,6 +1,6 @@
 'use client'
 
-import { Menu, X } from 'lucide-react'
+import { LogOut, Menu, Settings, User, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
@@ -9,6 +9,13 @@ import { Semester } from '@/types'
 
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 import {
   Sheet,
   SheetContent,
@@ -61,11 +68,32 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
               {currentPeriod}
             </Badge>
           )}
-          <Avatar className='size-8'>
-            <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
-              LE
-            </AvatarFallback>
-          </Avatar>
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button type='button' className='cursor-pointer rounded-full'>
+                <Avatar className='size-8'>
+                  <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
+                    LE
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-48'>
+              <DropdownMenuItem>
+                <User className='size-4' />
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className='size-4' />
+                Ajustes
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <LogOut className='size-4' />
+                Cerrar sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger className='lg:hidden cursor-pointer' aria-label='Abrir menú'>
               <Menu className='size-5' />
