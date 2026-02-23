@@ -1,43 +1,58 @@
 'use client'
 
+import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
-
-import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 
 import { Semester } from '@/types'
 
+import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+  SheetTrigger,
+} from '../ui/sheet'
+
+const links = [
+  { label: 'Documentos', href: '/documents' },
+  { label: 'Chat', href: '/chat' },
+  { label: 'Quizzes', href: '/quizzes' },
+  { label: 'Glosarios', href: '/glossaries' },
+  { label: 'Mapas', href: '/concept-maps' },
+]
 
 export default function Navbar({ semesters }: { semesters: Semester[] }) {
-  const [showMenu, setShowMenu] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleSignOut = () => {
-    localStorage.removeItem('token')
-    document.cookie = 'token=; path=/; max-age=0'
-    window.location.href = '/login'
-  }
-
+  const pathname = usePathname()
   const currentPeriod = semesters?.[0]?.period
+  const [open, setOpen] = useState(false)
 
   return (
     <nav className='border-b border-muted-foreground/30'>
       <header className='max-w-7xl mx-auto flex justify-between items-center p-4'>
-        <Link href='/'>
+        <Link href='/dashboard'>
           <h1 className='text-2xl font-bold'>AcademIA</h1>
         </Link>
-        <div className='flex items-center gap-4 relative' ref={menuRef}>
+        <div className='hidden lg:flex items-center gap-4'>
+          {links.map((link) => (
+            <Link
+              key={link.label}
+              className={`text-sm font-medium hover:text-foreground ${
+                pathname === link.href
+                  ? 'text-foreground'
+                  : 'text-muted-foreground'
+              }`}
+              href={link.href}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <div className='flex items-center gap-3'>
           {currentPeriod && (
             <Badge
               variant='outline'
@@ -46,24 +61,41 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
               {currentPeriod}
             </Badge>
           )}
-          <div>
-            <div
-              className='w-10 h-10 rounded-full bg-muted-foreground/30 flex items-center justify-center text-sm font-semibold cursor-pointer hover:bg-muted-foreground/40'
-              onClick={() => setShowMenu(!showMenu)}
-            >
+          <Avatar className='size-8'>
+            <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
               LE
-            </div>
-            {showMenu && (
-              <div className='absolute right-3 mt-2 w-48 py-2 bg-background border border-border rounded-md shadow-lg z-50'>
-                <button
-                  onClick={handleSignOut}
-                  className='font-medium w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors cursor-pointer'
-                >
-                  Cerrar sesión
-                </button>
+            </AvatarFallback>
+          </Avatar>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger className='lg:hidden cursor-pointer' aria-label='Abrir menú'>
+              <Menu className='size-5' />
+            </SheetTrigger>
+            <SheetContent side='right' className='w-full max-w-full sm:max-w-full gap-0' showCloseButton={false}>
+              <header className='max-w-7xl mx-auto w-full flex justify-between items-center p-4'>
+                <SheetTitle className='text-2xl font-bold'>AcademIA</SheetTitle>
+                <SheetClose className='cursor-pointer'>
+                  <X className='size-5' />
+                  <span className='sr-only'>Cerrar</span>
+                </SheetClose>
+              </header>
+              <div className='flex flex-col gap-2 mt-4'>
+                {links.map((link) => (
+                  <Link
+                    key={link.label}
+                    className={`text-sm font-medium px-3 py-2 rounded-md hover:bg-accent ${
+                      pathname === link.href
+                        ? 'text-foreground bg-accent'
+                        : 'text-muted-foreground'
+                    }`}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               </div>
-            )}
-          </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
     </nav>

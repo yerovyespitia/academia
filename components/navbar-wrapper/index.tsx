@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { Semester } from '@/types'
 
 import Navbar from '../navbar'
-import SubNavbar from '../sub-navbar'
 
 export default function NavbarWrapper({
   semesters,
@@ -13,14 +12,8 @@ export default function NavbarWrapper({
   semesters: Semester[]
 }) {
   const pathname = usePathname()
-  const isLoginPage = pathname === '/login'
 
-  if (isLoginPage) return null
+  if (pathname === '/') return null
 
-  return (
-    <>
-      <Navbar semesters={semesters} />
-      <SubNavbar />
-    </>
-  )
+  return <Navbar semesters={semesters} />
 }

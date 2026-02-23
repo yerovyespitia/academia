@@ -1,4 +1,5 @@
-import { SemesterGrades, SubjectGrade } from '@/types'
+import { SubjectGrade } from '@/types'
+import { semesterGrades } from '@/lib/dummy-data'
 import {
   CheckCircle2,
   TrendingUp,
@@ -91,20 +92,7 @@ function computeMetricsForSubject(subject: SubjectGrade) {
   return { currentGrade, progress, neededScore, status }
 }
 
-async function getSemesterGrades(): Promise<SemesterGrades | null> {
-  const data = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/grades/semester/1`,
-  )
-  if (data.ok) {
-    const semesterGrades = (await data.json()) as SemesterGrades
-    return semesterGrades
-  }
-  return null
-}
-
-export default async function GradesPanel() {
-  const semesterGrades = await getSemesterGrades()
-
+export default function GradesPanel() {
   return (
     <div>
       <header className='flex justify-between items-center mb-4'>
@@ -116,7 +104,7 @@ export default async function GradesPanel() {
         </div>
       </header>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6'>
-        {(semesterGrades?.subjects ?? []).map((subject) => {
+        {(semesterGrades.subjects ?? []).map((subject) => {
           const { currentGrade, progress, status } =
             computeMetricsForSubject(subject)
           const config = statusConfig[status]
