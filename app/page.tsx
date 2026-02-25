@@ -120,7 +120,7 @@ export default function LandingPage() {
           href='/login'
           className='mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#1a4d2e] hover:bg-white/90 transition'
         >
-          Comenzar gratis
+          Iniciar sesión
           <ArrowRight className='size-4' />
         </Link>
       </section>
