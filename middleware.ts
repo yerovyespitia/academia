@@ -1,11 +1,17 @@
-import { NextResponse, NextRequest } from 'next/server'
+import {
+  convexAuthNextjsMiddleware,
+  createRouteMatcher,
+  nextjsMiddlewareRedirect,
+} from '@convex-dev/auth/nextjs/server'
 
-export function middleware(_request: NextRequest) {
-  return NextResponse.next()
-}
+const isPublicRoute = createRouteMatcher(['/', '/login', '/onboarding'])
+
+export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  if (!isPublicRoute(request) && !(await convexAuth.isAuthenticated())) {
+    return nextjsMiddlewareRedirect(request, '/')
+  }
+})
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
-  ],
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 }

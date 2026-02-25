@@ -13,7 +13,7 @@ export default function NavbarWrapper({
 }) {
   const pathname = usePathname()
 
-  if (pathname === '/') return null
+  if (pathname === '/' || pathname === '/login' || pathname === '/onboarding') return null
 
   return <Navbar semesters={semesters} />
 }

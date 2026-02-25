@@ -51,7 +51,7 @@ export default function LandingPage() {
           </a>
         </div>
         <Link
-          href='/dashboard'
+          href='/login'
           className='rounded-full bg-[#1a4d2e] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#153d24] transition'
         >
           Comenzar
@@ -73,7 +73,7 @@ export default function LandingPage() {
           documentos y deja que la IA transforme tu forma de estudiar.
         </p>
         <Link
-          href='/dashboard'
+          href='/login'
           className='mt-10 inline-flex items-center gap-2 rounded-full bg-[#1a4d2e] px-8 py-3.5 text-base font-semibold text-white hover:bg-[#153d24] transition'
         >
           Ir al Dashboard
@@ -117,7 +117,7 @@ export default function LandingPage() {
           IA haga el trabajo pesado.
         </p>
         <Link
-          href='/dashboard'
+          href='/login'
           className='mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[#1a4d2e] hover:bg-white/90 transition'
         >
           Comenzar gratis

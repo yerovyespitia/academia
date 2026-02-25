@@ -1,8 +1,9 @@
 'use client'
 
+import { useAuthActions } from '@convex-dev/auth/react'
 import { LogOut, Menu, Settings, User, X } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { Semester } from '@/types'
@@ -34,6 +35,8 @@ const links = [
 ]
 
 export default function Navbar({ semesters }: { semesters: Semester[] }) {
+  const { signOut } = useAuthActions()
+  const router = useRouter()
   const pathname = usePathname()
   const currentPeriod = semesters?.[0]?.period
   const [open, setOpen] = useState(false)
@@ -88,7 +91,9 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
                 Ajustes
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => signOut().then(() => router.push('/'))}
+              >
                 <LogOut className='size-4' />
                 Cerrar sesión
               </DropdownMenuItem>
