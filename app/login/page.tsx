@@ -30,7 +30,7 @@ export default function LoginPage() {
       formData.set('password', password)
       formData.set('flow', 'signIn')
       await signIn('password', formData)
-      router.push('/onboarding')
+      router.push('/piar')
     } catch {
       setError('Credenciales incorrectas. Intenta de nuevo.')
     } finally {

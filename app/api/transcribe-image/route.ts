@@ -6,7 +6,9 @@ export async function POST(req: Request) {
     const { messages }: { messages: UIMessage[] } = await req.json()
 
     const result = streamText({
-      model: openai('gpt-5-nano'),
+      model: openai('gpt-5.4-mini'),
+      system:
+        'Transcribe el texto de la imagen exactamente como aparece, sin frases introductorias, comentarios ni explicaciones previas. Responde únicamente con el contenido transcrito.',
       messages: convertToModelMessages(messages),
     })
 

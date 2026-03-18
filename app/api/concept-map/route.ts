@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const subtopicsList = Array.isArray(subtopics) ? subtopics.join(', ') : ''
 
     const result = streamObject({
-      model: openai('gpt-5-nano'),
+      model: openai('gpt-5.4-mini'),
       schema: conceptMapSchema,
       prompt: `Genera un mapa conceptual en formato JSON siguiendo el siguiente esquema:
 

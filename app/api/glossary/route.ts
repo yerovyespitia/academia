@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const topicsList = Array.isArray(topics) ? topics.join(', ') : ''
 
     const result = streamObject({
-      model: openai('gpt-5-nano'),
+      model: openai('gpt-5.4-mini'),
       schema: glossarySchema,
       prompt: `Genera un glosario en español para la clase "${className}".
 Incluye exactamente ${termCount} términos. Usa estos temas como guía: ${topicsList}.

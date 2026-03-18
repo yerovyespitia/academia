@@ -27,6 +27,7 @@ import {
 } from '../ui/sheet'
 
 const links = [
+  { label: 'PIAR', href: '/piar' },
   { label: 'Documentos', href: '/documents' },
   { label: 'Chat', href: '/chat' },
   { label: 'Quizzes', href: '/quizzes' },

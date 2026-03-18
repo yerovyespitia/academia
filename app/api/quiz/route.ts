@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const topicsList = Array.isArray(topics) ? topics.join(', ') : ''
 
     const result = streamObject({
-      model: openai('gpt-5-nano'),
+      model: openai('gpt-5.4-mini'),
       schema: quizSchema,
       prompt: `Genera un objeto de quiz en formato JSON con el siguiente esquema:
 - id: un identificador único en formato "quiz-<timestamp>"
