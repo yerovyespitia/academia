@@ -3,11 +3,14 @@
 import { useParams, useRouter } from 'next/navigation'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '@/convex/_generated/api'
+import { useQuery } from 'convex/react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import type { Id } from '@/convex/_generated/dataModel'
 import {
   ArrowLeft,
   Search,
@@ -20,23 +23,12 @@ import {
   RotateCcw,
   Loader2,
 } from 'lucide-react'
-
-type ApiGlossaryItem = {
+type StoredGlossaryItem = {
   id: number
-  term?: string
-  name?: string
+  term: string
   definition: string
   topic?: string
   example?: string
-}
-
-type SubjectApiResponse = {
-  id: number
-  name: string
-  code: string
-  credits: number
-  created_at: string
-  glossary: ApiGlossaryItem[]
 }
 
 export default function GlosarioDetailPage() {
@@ -45,10 +37,14 @@ export default function GlosarioDetailPage() {
   const subjectId = Array.isArray(routeParams?.id)
     ? routeParams?.id[0]
     : (routeParams?.id as string)
+  const classItem = useQuery(
+    api.classes.getById,
+    subjectId ? { id: subjectId as Id<'classes'> } : 'skip',
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [studyMode, setStudyMode] = useState(false)
   const [revealedTerms, setRevealedTerms] = useState<Set<number>>(new Set())
-  const [terms, setTerms] = useState<ApiGlossaryItem[]>([])
+  const [terms, setTerms] = useState<StoredGlossaryItem[]>([])
 
   // Speech synthesis state
   const [isSpeechLoading, setIsSpeechLoading] = useState(false)
@@ -61,23 +57,16 @@ export default function GlosarioDetailPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    const fetchSubjectGlossary = async () => {
+    const readStoredGlossary = () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/glossary/subject/${subjectId}`,
-        )
-        const data = await res.json()
-        if (Array.isArray(data)) {
-          setTerms(data as ApiGlossaryItem[])
-        } else {
-          const subject = data as SubjectApiResponse
-          setTerms(subject.glossary ?? [])
-        }
+        const stored = localStorage.getItem(`glossary:${subjectId}`)
+        const parsed = stored ? JSON.parse(stored) : null
+        setTerms(Array.isArray(parsed?.terms) ? parsed.terms : [])
       } catch {
         setTerms([])
       }
     }
-    if (subjectId) fetchSubjectGlossary()
+    if (subjectId) readStoredGlossary()
   }, [subjectId])
 
   // Extract example and topic when they come embedded inside the definition text
@@ -157,7 +146,7 @@ export default function GlosarioDetailPage() {
           const finalTopic = (t.topic ?? extracted.topic ?? 'General').trim()
           return {
             topic: finalTopic.length > 0 ? finalTopic : 'General',
-            term: t.name ?? t.term ?? '',
+            term: t.term ?? '',
             definition: (
               extracted.cleanDefinition ||
               t.definition ||
@@ -203,15 +192,17 @@ export default function GlosarioDetailPage() {
 
   const handleDeleteTerm = async (termId: number) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/glossary/${termId}`,
-        {
-          method: 'DELETE',
-        },
+      const nextTerms = terms.filter((term) => term.id !== termId)
+      setTerms(nextTerms)
+      localStorage.setItem(
+        `glossary:${subjectId}`,
+        JSON.stringify({
+          classId: subjectId,
+          className: classItem?.name ?? 'Glosario',
+          savedAt: new Date().toISOString(),
+          terms: nextTerms,
+        }),
       )
-      if (response.ok) {
-        setTerms((prevTerms) => prevTerms.filter((term) => term.id !== termId))
-      }
     } catch (error) {
       console.error('Error deleting term:', error)
     }
@@ -316,6 +307,9 @@ export default function GlosarioDetailPage() {
         <div className='flex items-start justify-between mb-2'>
           <div>
             <h1 className='text-3xl font-bold text-foreground'>Glosario</h1>
+            <p className='text-sm text-muted-foreground mt-1'>
+              {classItem?.name ?? 'Clase'}
+            </p>
           </div>
           <Badge
             variant='outline'
@@ -368,7 +362,9 @@ export default function GlosarioDetailPage() {
       {Object.keys(termsByTopic).length === 0 ? (
         <Card className='p-12 text-center bg-card border-border'>
           <BookOpen className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
-          <p className='text-muted-foreground'>No se encontraron términos</p>
+          <p className='text-muted-foreground'>
+            No se encontraron términos para {classItem?.name ?? 'esta clase'}
+          </p>
         </Card>
       ) : (
         <div className='space-y-8'>

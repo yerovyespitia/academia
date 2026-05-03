@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server'
 
+import ConvexClientProvider from '@/components/providers/convex-client-provider'
 import NavbarWrapper from '@/components/navbar-wrapper'
-import { semesters } from '@/lib/dummy-data'
 
 import './globals.css'
 
@@ -33,8 +33,10 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <NavbarWrapper semesters={semesters} />
-          {children}
+          <ConvexClientProvider>
+            <NavbarWrapper />
+            {children}
+          </ConvexClientProvider>
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>

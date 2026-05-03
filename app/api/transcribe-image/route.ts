@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model: openai('gpt-5.4-mini'),
       system:
-        'Transcribe el texto de la imagen exactamente como aparece, sin frases introductorias, comentarios ni explicaciones previas. Responde únicamente con el contenido transcrito.',
+        'Analiza el contenido de la imagen y extrae las ideas más importantes con datos puntuales. Identifica conceptos clave, definiciones, fechas, fórmulas, datos específicos y cualquier información relevante para estudiar. Organiza la información de forma clara y estructurada. No transcribas todo textualmente, sintetiza y prioriza lo más valioso. Responde únicamente con el contenido extraído, sin frases introductorias ni comentarios.',
       messages: convertToModelMessages(messages),
     })
 

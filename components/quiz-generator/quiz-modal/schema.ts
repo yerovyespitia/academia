@@ -9,13 +9,18 @@ export const quizSchema = z.object({
       z.object({
         id: z.union([z.string(), z.number()]).optional(),
         question: z.string().min(1, 'La pregunta no puede estar vacía'),
+        // opción múltiple
         options: z
           .array(z.string().min(1, 'La opción no puede estar vacía'))
-          .min(2, 'Debe haber al menos dos opciones por pregunta'),
-        correctAnswer: z.number().int().nonnegative(),
+          .optional(),
+        correctAnswer: z.number().int().nonnegative().optional(),
+        // respuesta abierta
+        modelAnswer: z.string().optional(),
       })
     )
-    .min(5, 'El quiz debe tener al menos 5 preguntas'),
+    .min(1, 'El quiz debe tener al menos una pregunta'),
 })
 
 export type QuizSchema = z.infer<typeof quizSchema>
+export type QuestionType = 'multiple' | 'open'
+export type StoredQuiz = QuizSchema & { questionType?: QuestionType }

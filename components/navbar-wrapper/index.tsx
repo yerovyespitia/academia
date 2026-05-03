@@ -2,18 +2,12 @@
 
 import { usePathname } from 'next/navigation'
 
-import { Semester } from '@/types'
-
 import Navbar from '../navbar'
 
-export default function NavbarWrapper({
-  semesters,
-}: {
-  semesters: Semester[]
-}) {
+export default function NavbarWrapper() {
   const pathname = usePathname()
 
-  if (pathname === '/' || pathname === '/login' || pathname === '/onboarding') return null
+  if (pathname === '/' || pathname === '/login') return null
 
-  return <Navbar semesters={semesters} />
+  return <Navbar />
 }

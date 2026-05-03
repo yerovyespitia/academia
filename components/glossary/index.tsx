@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookMarked, Sparkles } from 'lucide-react'
+import { useUserClasses } from '@/lib/use-user-classes'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import {
@@ -13,13 +14,11 @@ import {
   CardTitle,
 } from '../ui/card'
 import { GlossaryModal } from './glossary-modal'
-import { userGlossaries } from '@/lib/dummy-data'
 
 export default function Glossary() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-
-  const subjects = userGlossaries.subjects
+  const { classes } = useUserClasses()
 
   return (
     <Card className='bg-card border-border'>
@@ -41,33 +40,27 @@ export default function Glossary() {
       </CardHeader>
       <CardContent>
         <div className='space-y-3'>
-          {subjects.length === 0 && (
+          {classes.length === 0 && (
             <p className='text-sm text-muted-foreground'>No tienes glosarios aún.</p>
           )}
 
-          {subjects.slice(0, 3).map((s) => {
-            const topics = Array.from(
-              new Set((s.glossary ?? []).map((g) => g.topic).filter(Boolean)),
-            ) as string[]
-            const fallbackTerms = (s.glossary ?? []).map((g) => g.term)
-            const previewList = (topics.length > 0 ? topics : fallbackTerms)
-              .slice(0, 4)
-              .join(', ')
-            const hasMore = (topics.length > 0 ? topics : fallbackTerms).length > 4
+          {classes.slice(0, 3).map((classItem) => {
+            const previewList = classItem.topics.slice(0, 4).join(', ')
+            const hasMore = classItem.topics.length > 4
 
             return (
               <div
-                key={s.id}
+                key={classItem._id}
                 className='border border-border rounded-lg p-3 hover:bg-secondary/30 transition-colors cursor-pointer'
-                onClick={() => router.push(`/glossaries/${s.id}`)}
+                onClick={() => router.push(`/glossaries/${classItem._id}`)}
               >
                 <div className='flex items-center justify-between mb-2'>
-                  <p className='font-medium text-foreground'>Glosario: {s.name}</p>
+                  <p className='font-medium text-foreground'>Glosario: {classItem.name}</p>
                   <Badge
                     variant='outline'
                     className='text-xs'
                   >
-                    {(s.glossary?.length ?? 0)} términos
+                    {classItem.topics.length} temas base
                   </Badge>
                 </div>
                 <p className='text-xs text-muted-foreground'>

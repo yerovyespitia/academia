@@ -1,108 +1,107 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { Book, Calendar, FileText, Mic, Tag } from "lucide-react";
+import { useMemo, useState } from "react";
+import ButtonActions from "@/components/my-documents/button-actions";
+import NotFiles from "@/components/my-documents/not-files";
+import SearchBar from "@/components/my-documents/search-bar";
+import UploadFiles from "@/components/my-documents/upload-files";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
-import ButtonActions from '@/components/my-documents/button-actions'
-import NotFiles from '@/components/my-documents/not-files'
-import SearchBar from '@/components/my-documents/search-bar'
-import UploadFiles from '@/components/my-documents/upload-files'
-import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
-import { Mic, Calendar, Tag, Book } from 'lucide-react'
+type StoredDocument = {
+  _id: Id<"documents">;
+  classId: Id<"classes">;
+  className: string;
+  title: string;
+  type: "image" | "audio" | "pdf";
+  content: string;
+  originalFileName: string;
+  createdAt: number;
+  updatedAt: number;
+  preview: string;
+  wordCount: number;
+};
 
-const mockDocuments = [
-  {
-    id: 1,
-    name: 'Apuntes Cálculo Diferencial - Clase 1',
-    type: 'image',
-    tag: 'Cálculo',
-    date: '2024-03-15',
-    size: '2.4 MB',
-  },
-  {
-    id: 2,
-    name: 'Resumen Física Cuántica',
-    type: 'image',
-    tag: 'Física',
-    date: '2024-03-14',
-    size: '1.8 MB',
-  },
-  {
-    id: 3,
-    name: 'Nota de voz - Repaso Álgebra',
-    type: 'audio',
-    tag: 'Álgebra',
-    date: '2024-03-13',
-    size: '5.2 MB',
-    duration: '8:30',
-  },
-  {
-    id: 4,
-    name: 'Ecuaciones Diferenciales - Ejercicios',
-    type: 'image',
-    tag: 'Cálculo',
-    date: '2024-03-12',
-    size: '3.1 MB',
-  },
-  {
-    id: 5,
-    name: 'Termodinámica - Leyes fundamentales',
-    type: 'image',
-    tag: 'Física',
-    date: '2024-03-11',
-    size: '2.7 MB',
-  },
-  {
-    id: 6,
-    name: 'Nota de voz - Conceptos Clave',
-    type: 'audio',
-    tag: 'Programación',
-    date: '2024-03-10',
-    size: '4.5 MB',
-    duration: '6:45',
-  },
-]
+function formatDate(timestamp: number) {
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(timestamp);
+}
+
+function downloadTextFile(document: StoredDocument) {
+  const blob = new Blob([document.content], {
+    type: "text/plain;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  const safeName = document.title.replace(/[^\w.-]+/g, "_");
+  link.href = url;
+  link.download = `${safeName || "documento"}.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function MyDocuments() {
-  const [documents, setDocuments] = useState(mockDocuments)
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const { isAuthenticated } = useConvexAuth();
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const documents = useQuery(
+    api.documents.listForCurrentUser,
+    isAuthenticated ? {} : "skip",
+  );
+  const deleteDocument = useMutation(api.documents.remove);
 
-  // Get unique tags
-  const tags = Array.from(new Set(documents.map((doc) => doc.tag)))
+  const normalizedDocuments = (documents ?? []) as StoredDocument[];
+  const tags = Array.from(
+    new Set(normalizedDocuments.map((doc) => doc.className)),
+  );
 
-  // Filter documents
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesTag = !selectedTag || doc.tag === selectedTag
-    const matchesSearch = doc.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-    return matchesTag && matchesSearch
-  })
+  const filteredDocuments = useMemo(
+    () =>
+      normalizedDocuments.filter((doc) => {
+        const matchesTag = !selectedTag || doc.className === selectedTag;
+        const searchValue = searchQuery.toLowerCase();
+        const matchesSearch =
+          doc.title.toLowerCase().includes(searchValue) ||
+          doc.content.toLowerCase().includes(searchValue);
 
-  // Group documents by tag
+        return matchesTag && matchesSearch;
+      }),
+    [normalizedDocuments, searchQuery, selectedTag],
+  );
+
   const documentsByTag = filteredDocuments.reduce(
     (acc, doc) => {
-      if (!acc[doc.tag]) {
-        acc[doc.tag] = []
+      if (!acc[doc.className]) {
+        acc[doc.className] = [];
       }
-      acc[doc.tag].push(doc)
-      return acc
+      acc[doc.className].push(doc);
+      return acc;
     },
-    {} as Record<string, typeof mockDocuments>,
-  )
+    {} as Record<string, StoredDocument[]>,
+  );
 
-  const handleDeleteDocument = (id: number) => {
-    setDocuments(documents.filter((doc) => doc.id !== id))
-  }
+  const handleDeleteDocument = async (id: Id<"documents">) => {
+    try {
+      await deleteDocument({ id });
+    } catch (error) {
+      console.error("Error deleting document: ", error);
+    }
+  };
 
   return (
     <>
-      <div className='mb-4'>
-        <h1 className='text-3xl font-bold text-foreground mb-2'>
+      <div className="mb-4">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Mis Documentos
         </h1>
-        <p className='text-muted-foreground'>
+        <p className="text-muted-foreground">
           Gestiona tus apuntes, imágenes y notas de voz
         </p>
       </div>
@@ -117,64 +116,70 @@ export default function MyDocuments() {
         tags={tags}
       />
 
-      {/* Documents Grid - Organized by Tags */}
       {Object.keys(documentsByTag).length === 0 ? (
         <NotFiles />
       ) : (
-        <div className='space-y-8'>
+        <div className="space-y-8">
           {Object.entries(documentsByTag).map(([tag, docs]) => (
             <div key={tag}>
-              <div className='flex items-center gap-2 mb-4'>
-                <Tag className='size-5 text-primary' />
-                <h2 className='text-xl font-semibold text-foreground'>{tag}</h2>
-                <Badge className='bg-accent-foreground/10 text-primary px-3'>
+              <div className="flex items-center gap-2 mb-4">
+                <Tag className="size-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">{tag}</h2>
+                <Badge className="bg-accent-foreground/10 text-primary px-3">
                   {docs.length}
                 </Badge>
               </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {docs.map((doc) => (
                   <Card
-                    key={doc.id}
-                    className='p-4 bg-card border-border hover:border-primary/50    '
+                    key={doc._id}
+                    className="p-4 bg-card border-border hover:border-primary/50"
                   >
-                    {doc.type === 'image' && (
-                      <div className='w-full h-32 bg-secondary rounded-lg mb-3 flex items-center justify-center'>
-                        <Book className='size-12 text-primary' />
+                    <div className="w-full h-32 bg-secondary rounded-lg mb-3 flex items-center justify-center">
+                      {doc.type === "image" ? (
+                        <Book className="size-12 text-primary" />
+                      ) : doc.type === "audio" ? (
+                        <Mic className="size-12 text-primary" />
+                      ) : (
+                        <FileText className="size-12 text-primary" />
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-medium text-foreground text-sm line-clamp-2">
+                          {doc.title}
+                        </h3>
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-4 whitespace-pre-line">
+                          {doc.preview}
+                        </p>
                       </div>
-                    )}
 
-                    {doc.type === 'audio' && (
-                      <div className='w-full h-32 bg-secondary rounded-lg mb-3 flex items-center justify-center'>
-                        <Mic className='size-12 text-primary' />
-                      </div>
-                    )}
-
-                    <div className='space-y-2'>
-                      <h3 className='font-medium text-foreground text-sm line-clamp-2'>
-                        {doc.name}
-                      </h3>
-
-                      <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-                        <Calendar className='size-3' />
-                        <span>{doc.date}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        <Calendar className="size-3" />
+                        <span>{formatDate(doc.createdAt)}</span>
                         <span>•</span>
-                        <span>{doc.size}</span>
-                        {doc.duration && (
-                          <>
-                            <span>•</span>
-                            <span>{doc.duration}</span>
-                          </>
-                        )}
+                        <span>{doc.wordCount} palabras</span>
                       </div>
 
-                      <Badge variant='outline' className='text-xs'>
-                        {doc.type === 'image' ? 'Imagen' : 'Audio'}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          {doc.type === "image"
+                            ? "Imagen"
+                            : doc.type === "audio"
+                              ? "Audio"
+                              : "PDF"}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {doc.originalFileName}
+                        </Badge>
+                      </div>
                     </div>
 
                     <ButtonActions
-                      deleteDocument={() => handleDeleteDocument(doc.id)}
+                      downloadDocument={() => downloadTextFile(doc)}
+                      deleteDocument={() => handleDeleteDocument(doc._id)}
                     />
                   </Card>
                 ))}
@@ -184,5 +189,5 @@ export default function MyDocuments() {
         </div>
       )}
     </>
-  )
+  );
 }

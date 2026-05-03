@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,65 +18,55 @@ import {
   Layers,
 } from 'lucide-react'
 
-// Mock data for concept maps
-const mockConceptMaps = [
-  {
-    id: 'calc-1710512400000',
-    name: 'Mapa: Cálculo Diferencial Completo',
-    class: 'Cálculo Diferencial',
-    tag: 'Cálculo',
-    date: '2024-03-15',
-    concepts: 24,
-    levels: 4,
-    connections: 38,
-  },
-  {
-    id: 'physics-1710426000000',
-    name: 'Mapa: Mecánica Clásica',
-    class: 'Física Mecánica',
-    tag: 'Física',
-    date: '2024-03-14',
-    concepts: 18,
-    levels: 3,
-    connections: 27,
-  },
-  {
-    id: 'calc-1710339600000',
-    name: 'Mapa: Límites y Continuidad',
-    class: 'Cálculo Diferencial',
-    tag: 'Cálculo',
-    date: '2024-03-13',
-    concepts: 12,
-    levels: 3,
-    connections: 16,
-  },
-  {
-    id: 'programming-1710253200000',
-    name: 'Mapa: Estructuras de Datos',
-    class: 'Programación I',
-    tag: 'Programación',
-    date: '2024-03-12',
-    concepts: 20,
-    levels: 4,
-    connections: 32,
-  },
-  {
-    id: 'physics-1710166800000',
-    name: 'Mapa: Cinemática',
-    class: 'Física Mecánica',
-    tag: 'Física',
-    date: '2024-03-11',
-    concepts: 15,
-    levels: 3,
-    connections: 22,
-  },
-]
+type StoredConceptMap = {
+  id: string
+  name: string
+  class: string
+  tag: string
+  date: string
+  concepts: number
+  levels: number
+  connections: number
+}
 
 export default function ConceptMapsPage() {
   const router = useRouter()
-  const [conceptMaps, setConceptMaps] = useState(mockConceptMaps)
+  const [conceptMaps, setConceptMaps] = useState<StoredConceptMap[]>([])
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const storedMaps: StoredConceptMap[] = []
+
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (!key.startsWith('concept-map:')) {
+          continue
+        }
+
+        const raw = localStorage.getItem(key)
+        if (!raw) {
+          continue
+        }
+
+        const parsed = JSON.parse(raw)
+        const map = parsed?.map
+        storedMaps.push({
+          id: key.replace('concept-map:', ''),
+          name: `Mapa: ${map?.topic ?? parsed?.className ?? 'Clase'}`,
+          class: parsed?.className ?? 'Clase',
+          tag: parsed?.className ?? 'Clase',
+          date: new Date().toISOString().slice(0, 10),
+          concepts: Array.isArray(map?.nodes) ? map.nodes.length : 0,
+          levels: parsed?.depth ?? 0,
+          connections: Array.isArray(map?.edges) ? map.edges.length : 0,
+        })
+      }
+    } catch {}
+
+    storedMaps.sort((a, b) => b.id.localeCompare(a.id))
+    setConceptMaps(storedMaps)
+  }, [])
 
   // Get unique tags
   const tags = Array.from(new Set(conceptMaps.map((map) => map.tag)))
@@ -99,10 +89,11 @@ export default function ConceptMapsPage() {
       acc[map.tag].push(map)
       return acc
     },
-    {} as Record<string, typeof mockConceptMaps>,
+    {} as Record<string, StoredConceptMap[]>,
   )
 
   const handleDeleteMap = (id: string) => {
+    localStorage.removeItem(`concept-map:${id}`)
     setConceptMaps(conceptMaps.filter((map) => map.id !== id))
   }
 

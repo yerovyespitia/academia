@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,67 +18,55 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react'
-import { Quizzes } from '@/types'
 
-// Mock data for quizzes
-const mockQuizzes = [
-  {
-    id: 'calc-1710512400000',
-    name: 'Quiz: Límites y Continuidad',
-    class: 'Cálculo Diferencial',
-    tag: 'Cálculo',
-    date: '2024-03-15',
-    questions: 15,
-    completed: true,
-    score: 13,
-  },
-  {
-    id: 'physics-1710426000000',
-    name: 'Quiz: Cinemática y Movimiento',
-    class: 'Física Mecánica',
-    tag: 'Física',
-    date: '2024-03-14',
-    questions: 20,
-    completed: true,
-    score: 16,
-  },
-  {
-    id: 'calc-1710339600000',
-    name: 'Quiz: Derivadas Básicas',
-    class: 'Cálculo Diferencial',
-    tag: 'Cálculo',
-    date: '2024-03-13',
-    questions: 10,
-    completed: false,
-    score: null,
-  },
-  {
-    id: 'programming-1710253200000',
-    name: 'Quiz: Estructuras de Control',
-    class: 'Programación I',
-    tag: 'Programación',
-    date: '2024-03-12',
-    questions: 12,
-    completed: true,
-    score: 11,
-  },
-  {
-    id: 'physics-1710166800000',
-    name: 'Quiz: Leyes de Newton',
-    class: 'Física Mecánica',
-    tag: 'Física',
-    date: '2024-03-11',
-    questions: 15,
-    completed: false,
-    score: null,
-  },
-]
+type StoredQuiz = {
+  id: string
+  name: string
+  class: string
+  tag: string
+  date: string
+  questions: number
+  completed: boolean
+  score: number | null
+}
 
 export default function QuizGeneratorPage() {
   const router = useRouter()
-  const [quizzes, setQuizzes] = useState(mockQuizzes)
+  const [quizzes, setQuizzes] = useState<StoredQuiz[]>([])
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const storedQuizzes: StoredQuiz[] = []
+
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (!key.startsWith('quiz:')) {
+          continue
+        }
+
+        const raw = localStorage.getItem(key)
+        if (!raw) {
+          continue
+        }
+
+        const parsed = JSON.parse(raw)
+        storedQuizzes.push({
+          id: parsed.id ?? key.replace('quiz:', ''),
+          name: parsed.name ?? 'Quiz',
+          class: parsed.class ?? 'Clase',
+          tag: parsed.class ?? 'Clase',
+          date: new Date().toISOString().slice(0, 10),
+          questions: Array.isArray(parsed.questions) ? parsed.questions.length : 0,
+          completed: false,
+          score: null,
+        })
+      }
+    } catch {}
+
+    storedQuizzes.sort((a, b) => b.id.localeCompare(a.id))
+    setQuizzes(storedQuizzes)
+  }, [])
 
   // Get unique tags
   const tags = Array.from(new Set(quizzes.map((quiz) => quiz.tag)))
@@ -101,10 +89,11 @@ export default function QuizGeneratorPage() {
       acc[quiz.tag].push(quiz)
       return acc
     },
-    {} as Record<string, typeof mockQuizzes>,
+    {} as Record<string, StoredQuiz[]>,
   )
 
   const handleDeleteQuiz = (id: string) => {
+    localStorage.removeItem(`quiz:${id}`)
     setQuizzes(quizzes.filter((quiz) => quiz.id !== id))
   }
 

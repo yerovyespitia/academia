@@ -9,6 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as classes from "../classes.js";
+import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 
 import type {
@@ -19,6 +21,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  classes: typeof classes;
+  documents: typeof documents;
   http: typeof http;
 }>;
 

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { Semester } from '@/types'
+import { useUserClasses } from '@/lib/use-user-classes'
 
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
@@ -35,11 +35,11 @@ const links = [
   { label: 'Mapas', href: '/concept-maps' },
 ]
 
-export default function Navbar({ semesters }: { semesters: Semester[] }) {
+export default function Navbar() {
   const { signOut } = useAuthActions()
   const router = useRouter()
   const pathname = usePathname()
-  const currentPeriod = semesters?.[0]?.period
+  const { classes } = useUserClasses()
   const [open, setOpen] = useState(false)
 
   return (
@@ -64,12 +64,12 @@ export default function Navbar({ semesters }: { semesters: Semester[] }) {
           ))}
         </div>
         <div className='flex items-center gap-3'>
-          {currentPeriod && (
+          {classes.length > 0 && (
             <Badge
               variant='outline'
               className='bg-primary/10 text-primary border-primary/20'
             >
-              {currentPeriod}
+              {classes.length} clases
             </Badge>
           )}
           <DropdownMenu modal={false}>

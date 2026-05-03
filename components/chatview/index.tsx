@@ -6,15 +6,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Send, User, Bot, Loader2, Pause } from 'lucide-react'
-import SuggestQuestions from './suggest-questions'
 import Header from './header'
 import Error from './error'
 
 export default function ChatView() {
   const [message, setMessage] = useState('')
   const { messages, sendMessage, status, error, stop } = useChat()
-  const showSuggestions =
-    messages.length === 0 && status === 'ready' && message === ''
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -29,10 +26,7 @@ export default function ChatView() {
       <div className='w-full'>
         <Card className='bg-card border-border h-[calc(100vh-280px)] flex flex-col pt-6 pb-0'>
           {/* Chat Messages */}
-          {showSuggestions ? (
-            <SuggestQuestions setMessage={setMessage} />
-          ) : (
-            <CardContent className='flex-1 overflow-y-auto p-6 space-y-6'>
+          <CardContent className='flex-1 overflow-y-auto p-6 space-y-6'>
               {messages.map((msg, index) => (
                 <div
                   key={msg.id}
@@ -91,7 +85,6 @@ export default function ChatView() {
                 </div>
               ))}
             </CardContent>
-          )}
 
           {error && <Error error={error} />}
 

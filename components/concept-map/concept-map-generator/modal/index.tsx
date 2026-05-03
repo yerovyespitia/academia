@@ -23,6 +23,7 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { conceptMapSchema } from '@/components/concept-map/schema'
+import { useUserClasses } from '@/lib/use-user-classes'
 
 interface ConceptMapGeneratorModalProps {
   open: boolean
@@ -37,40 +38,20 @@ export function ConceptMapGeneratorModal({
   const [selectedClass, setSelectedClass] = useState('')
   const [complexity, setComplexity] = useState([3])
   const [isGenerating, setIsGenerating] = useState(false)
-  const { submit, object } = useObject({
+  const { classes, isLoading: isLoadingClasses } = useUserClasses()
+  const { submit, object, isLoading } = useObject({
     api: '/api/concept-map',
     schema: conceptMapSchema,
   })
 
-  const classes = [
-    {
-      id: 'calc',
-      name: 'Cálculo Diferencial',
-      code: 'MAT-101',
-      hasSyllabus: true,
-    },
-    {
-      id: 'physics',
-      name: 'Física Mecánica',
-      code: 'FIS-201',
-      hasSyllabus: true,
-    },
-    {
-      id: 'programming',
-      name: 'Programación I',
-      code: 'CS-101',
-      hasSyllabus: true,
-    },
-  ]
-
   const handleGenerate = () => {
     if (!selectedClass) return
     setIsGenerating(true)
-    const cls = classes.find((c) => c.id === selectedClass)
+    const cls = classes.find((c) => c._id === selectedClass)
     submit({
       topic: cls?.name ?? selectedClass,
       depth: complexity[0],
-      subtopics: [],
+      subtopics: cls?.topics ?? [],
     })
   }
 
@@ -78,12 +59,18 @@ export function ConceptMapGeneratorModal({
   // Use an effect to avoid side-effects during render
   // and to ensure we only act once when data is ready
   useEffect(() => {
-    if (!isGenerating) return
-    const ready = Boolean(object?.nodes?.length && object?.edges)
+    if (!isGenerating || isLoading) return
+    const ready = Boolean(object?.nodes?.length && object?.edges?.length)
     if (!ready) return
     try {
       const mapId = `${selectedClass}-${Date.now()}`
-      const payload = { map: object, depth: complexity[0] }
+      const classData = classes.find((item) => item._id === selectedClass)
+      const payload = {
+        map: object,
+        depth: complexity[0],
+        classId: selectedClass,
+        className: classData?.name ?? '',
+      }
       localStorage.setItem(`concept-map:${mapId}`, JSON.stringify(payload))
       setIsGenerating(false)
       onOpenChange(false)
@@ -91,7 +78,7 @@ export function ConceptMapGeneratorModal({
     } catch {
       setIsGenerating(false)
     }
-  }, [object, isGenerating, complexity])
+  }, [classes, object, isGenerating, isLoading, complexity, onOpenChange, router, selectedClass])
 
   return (
     <Dialog
@@ -120,40 +107,53 @@ export function ConceptMapGeneratorModal({
             >
               {classes.map((cls) => (
                 <div
-                  key={cls.id}
+                  key={cls._id}
                   className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${
-                    selectedClass === cls.id
+                    selectedClass === cls._id
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
-                  onClick={() => setSelectedClass(cls.id)}
+                  onClick={() => setSelectedClass(cls._id)}
                 >
                   <RadioGroupItem
-                    value={cls.id}
-                    id={cls.id}
+                    value={cls._id}
+                    id={cls._id}
                   />
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
                       <Label
-                        htmlFor={cls.id}
+                        htmlFor={cls._id}
                         className='cursor-pointer font-medium text-foreground'
                       >
                         {cls.name}
                       </Label>
-                      {cls.hasSyllabus && (
+                      {cls.hasProgram && (
                         <Badge
                           variant='outline'
                           className='bg-green-500/10 text-green-500 border-green-500/30'
                         >
                           <CheckCircle2 className='w-3 h-3 mr-1' />
-                          Syllabus disponible
+                          Temas base listos
                         </Badge>
                       )}
                     </div>
                     <p className='text-sm text-muted-foreground'>{cls.code}</p>
+                    <div className='mt-2 flex flex-wrap gap-1.5'>
+                      {cls.topics.slice(0, 4).map((topic) => (
+                        <Badge key={topic} variant='outline' className='text-xs bg-secondary/50'>
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
+
+              {!isLoadingClasses && classes.length === 0 && (
+                <p className='text-sm text-muted-foreground'>
+                  No hay clases disponibles todavía.
+                </p>
+              )}
             </RadioGroup>
           </div>
 
@@ -184,7 +184,7 @@ export function ConceptMapGeneratorModal({
               <div className='space-y-2 text-sm'>
                 <p className='text-foreground font-medium'>¿Cómo funciona?</p>
                 <ul className='text-muted-foreground space-y-1'>
-                  <li>• La IA analiza el syllabus de la clase seleccionada</li>
+                  <li>• La IA toma los temas base de la clase seleccionada</li>
                   <li>• Identifica conceptos clave y sus relaciones</li>
                   <li>• Genera un mapa visual interactivo con jerarquías</li>
                   <li>• Puedes explorar cada concepto en detalle</li>

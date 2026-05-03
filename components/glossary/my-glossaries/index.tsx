@@ -2,44 +2,72 @@
 
 import { useRouter } from 'next/navigation'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import type { SubjectGlossary, UserGlossaries } from '@/types'
+import { useUserClasses } from '@/lib/use-user-classes'
 import { BookOpen, Search, Calendar, Tag, Eye, BookMarked } from 'lucide-react'
 
-type MyGlossariesProps = {
-  userGlossaries: UserGlossaries
+type GlossaryCard = {
+  id: string
+  name: string
+  class: string
+  tag: string
+  date: string
+  terms: number
+  topics: string[]
 }
 
-export default function MyGlossaries({ userGlossaries }: MyGlossariesProps) {
+export default function MyGlossaries() {
   const router = useRouter()
-  const [subjects, setSubjects] = useState<SubjectGlossary[]>(
-    userGlossaries.subjects ?? [],
-  )
+  const { classes } = useUserClasses()
+  const [storedGlossaries, setStoredGlossaries] = useState<
+    Record<string, { savedAt?: string; terms: Array<{ topic?: string }> }>
+  >({})
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const glosarios = useMemo(
-    () =>
-      subjects.map((s) => {
-        const topics = Array.from(
-          new Set((s.glossary ?? []).map((g) => g.topic).filter(Boolean)),
-        ) as string[]
-        return {
-          id: String(s.id),
-          name: `Glosario: ${s.name}`,
-          class: s.name,
-          tag: s.name,
-          date: new Date(s.created_at).toISOString().slice(0, 10),
-          terms: s.glossary?.length ?? 0,
-          topics,
+  useEffect(() => {
+    const nextGlossaries: Record<
+      string,
+      { savedAt?: string; terms: Array<{ topic?: string }> }
+    > = {}
+
+    for (const classItem of classes) {
+      try {
+        const stored = localStorage.getItem(`glossary:${classItem._id}`)
+        if (stored) {
+          nextGlossaries[classItem._id] = JSON.parse(stored)
         }
-      }),
-    [subjects],
+      } catch {}
+    }
+
+    setStoredGlossaries(nextGlossaries)
+  }, [classes])
+
+  const glosarios = useMemo<GlossaryCard[]>(
+    () =>
+      classes
+        .filter((classItem) => storedGlossaries[classItem._id] !== undefined)
+        .map((classItem) => {
+          const storedTerms = storedGlossaries[classItem._id]?.terms ?? []
+          const topics = Array.from(
+            new Set(storedTerms.map((g) => g.topic).filter(Boolean)),
+          ) as string[]
+          return {
+            id: classItem._id,
+            name: `Glosario: ${classItem.name}`,
+            class: classItem.name,
+            tag: classItem.name,
+            date: storedGlossaries[classItem._id]?.savedAt?.slice(0, 10) ?? '',
+            terms: storedTerms.length,
+            topics: topics.length > 0 ? topics : classItem.topics,
+          }
+        }),
+    [classes, storedGlossaries],
   )
 
   // Get unique tags (subjects names)
@@ -69,11 +97,11 @@ export default function MyGlossaries({ userGlossaries }: MyGlossariesProps) {
   const glosariosByTag = useMemo(() => {
     return filteredGlosarios.reduce(
       (acc, g) => {
-        if (!acc[g.tag]) acc[g.tag] = [] as typeof filteredGlosarios
+        if (!acc[g.tag]) acc[g.tag] = []
         acc[g.tag].push(g)
         return acc
       },
-      {} as Record<string, typeof filteredGlosarios>,
+      {} as Record<string, GlossaryCard[]>,
     )
   }, [filteredGlosarios])
 
@@ -100,7 +128,7 @@ export default function MyGlossaries({ userGlossaries }: MyGlossariesProps) {
             </div>
             <div>
               <p className='text-2xl font-bold text-foreground'>
-                {subjects.length}
+                {glosarios.length}
               </p>
               <p className='text-sm text-muted-foreground'>
                 Total de glosarios
@@ -168,6 +196,7 @@ export default function MyGlossaries({ userGlossaries }: MyGlossariesProps) {
               <div className='flex items-center gap-2 mb-4'>
                 <Tag className='size-5 text-primary' />
                 <h2 className='text-xl font-semibold text-foreground'>{tag}</h2>
+                <Badge variant='secondary'>{glosariosList.length}</Badge>
               </div>
 
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -205,10 +234,12 @@ export default function MyGlossaries({ userGlossaries }: MyGlossariesProps) {
                         ))}
                       </div>
 
-                      <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-                        <Calendar className='w-3 h-3' />
-                        <span>{glosario.date}</span>
-                      </div>
+                      {glosario.date && (
+                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                          <Calendar className='w-3 h-3' />
+                          <span>{glosario.date}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className='flex gap-2 mt-4'>

@@ -28,6 +28,7 @@ import {
 
 import { glossarySchema } from './schema'
 import type { GlossarySchema } from './schema'
+import { useUserClasses } from '@/lib/use-user-classes'
 
 interface GlossaryModalProps {
   open: boolean
@@ -36,17 +37,8 @@ interface GlossaryModalProps {
 
 export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
   const router = useRouter()
-  const [subjects, setSubjects] = useState<
-    Array<{
-      id: number
-      name: string
-      code?: string
-      glossary?: Array<{ topic?: string }>
-    }>
-  >([])
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(
-    null,
-  )
+  const { classes } = useUserClasses()
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
   const [termCount, setTermCount] = useState([6])
   const [generating, setGenerating] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -68,56 +60,33 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
   const terms: GlossarySchema['terms'] = glossaryObject?.terms ?? []
 
   useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/glossary/user/1`,
-        )
-        const data = await res.json()
-        const subjectsFromApi: Array<{
-          id: number
-          name: string
-          code?: string
-          glossary?: Array<{ topic?: string }>
-        }> = Array.isArray(data?.subjects)
-          ? data.subjects
-          : (data?.subjects ?? [])
-        setSubjects(subjectsFromApi)
-        if (!selectedSubjectId && subjectsFromApi.length > 0) {
-          setSelectedSubjectId(subjectsFromApi[0].id)
-        }
-      } catch {
-        setSubjects([])
-      }
+    if (!selectedSubjectId && classes.length > 0) {
+      setSelectedSubjectId(classes[0]._id)
     }
-    fetchSubjects()
-  }, [])
+  }, [classes, selectedSubjectId])
 
   const handleGenerate = () => {
     setGenerating(true)
-    const subject = subjects.find((s) => s.id === selectedSubjectId)
-    const derivedTopics = Array.from(
-      new Set((subject?.glossary ?? []).map((g) => g.topic).filter(Boolean)),
-    ) as string[]
+    const subject = classes.find((s) => s._id === selectedSubjectId)
     submit({
       className: subject?.name ?? 'Glosario',
-      topics: derivedTopics,
+      topics: subject?.topics ?? [],
       termCount: termCount[0],
     })
   }
 
-  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId)
+  const selectedSubject = classes.find((s) => s._id === selectedSubjectId)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border'>
+      <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-xl'>
             <Sparkles className='w-5 h-5 text-primary' />
             Generar Glosario con IA
           </DialogTitle>
           <DialogDescription>
-            Crea un glosario personalizado basado en el syllabus de tu clase
+            Crea un glosario personalizado basado en los temas de tu clase
           </DialogDescription>
         </DialogHeader>
 
@@ -129,29 +98,29 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                 Selecciona la clase
               </Label>
               <RadioGroup
-                value={selectedSubjectId ? String(selectedSubjectId) : ''}
-                onValueChange={(v) => setSelectedSubjectId(Number(v))}
+                value={selectedSubjectId ?? ''}
+                onValueChange={setSelectedSubjectId}
               >
-                {subjects.map((subjectItem) => (
+                {classes.map((subjectItem) => (
                   <div
-                    key={subjectItem.id}
+                    key={subjectItem._id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedSubjectId === subjectItem.id
+                      selectedSubjectId === subjectItem._id
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setSelectedSubjectId(subjectItem.id)}
+                    onClick={() => setSelectedSubjectId(subjectItem._id)}
                   >
                     <div className='flex items-start gap-3'>
                       <RadioGroupItem
-                        value={String(subjectItem.id)}
-                        id={String(subjectItem.id)}
+                        value={subjectItem._id}
+                        id={subjectItem._id}
                         className='mt-1'
                       />
                       <div className='flex-1'>
                         <div className='flex items-center justify-between mb-2'>
                           <Label
-                            htmlFor={String(subjectItem.id)}
+                            htmlFor={subjectItem._id}
                             className='font-semibold text-foreground cursor-pointer'
                           >
                             {subjectItem.name}
@@ -163,33 +132,31 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                         <div className='flex items-center gap-2 mb-2'>
                           <BookOpen className='w-4 h-4 text-primary' />
                           <span className='text-sm text-muted-foreground'>
-                            Syllabus disponible
+                            Temas base disponibles
                           </span>
                           <CheckCircle2 className='w-4 h-4 text-green-500' />
                         </div>
                         <div className='flex flex-wrap gap-1.5'>
-                          {Array.from(
-                            new Set(
-                              (subjectItem.glossary ?? [])
-                                .map((g) => g.topic)
-                                .filter(Boolean),
-                            ),
-                          )
-                            .slice(0, 6)
-                            .map((topic) => (
-                              <Badge
-                                key={topic}
-                                variant='outline'
-                                className='text-xs bg-secondary/50'
-                              >
-                                {topic}
-                              </Badge>
-                            ))}
+                          {subjectItem.topics.slice(0, 6).map((topic) => (
+                            <Badge
+                              key={topic}
+                              variant='outline'
+                              className='text-xs bg-secondary/50'
+                            >
+                              {topic}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
+
+                {classes.length === 0 && (
+                  <p className='text-sm text-muted-foreground'>
+                    No hay clases disponibles todavía.
+                  </p>
+                )}
               </RadioGroup>
             </div>
 
@@ -238,14 +205,13 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                   </div>
                   <div className='space-y-2'>
                     <p className='text-sm font-medium text-foreground'>
-                      Generación basada en syllabus
+                      Generación basada en temas de la clase
                     </p>
                     <p className='text-xs text-muted-foreground'>
-                      La IA analizará el syllabus de{' '}
+                      La IA analizará los temas base de{' '}
                       <strong>{selectedSubject.name}</strong> para identificar
                       los términos más importantes y crear definiciones claras y
-                      contextualizadas. Los términos se organizarán por temas
-                      del curso.
+                      contextualizadas.
                     </p>
                   </div>
                 </div>
@@ -341,31 +307,38 @@ export function GlossaryModal({ open, onOpenChange }: GlossaryModalProps) {
                     onOpenChange(false)
                     return
                   }
-                  const body = {
-                    class: glossaryObject?.class ?? 'Glosario',
-                    subject_id: selectedSubjectId,
-                    terms: terms.map((t) => ({
-                      name: t.name,
-                      definition: t.definition,
-                      example: t.example,
-                      topic: t.topic,
-                    })),
-                  }
                   try {
-                    const resp = await fetch(
-                      `${process.env.NEXT_PUBLIC_API_URL}/glossary`,
-                      {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                      },
+                    const storageKey = `glossary:${selectedSubjectId}`
+                    const currentRaw = localStorage.getItem(storageKey)
+                    const currentTerms = currentRaw
+                      ? ((JSON.parse(currentRaw)?.terms ?? []) as Array<{
+                          id: number
+                          term: string
+                          definition: string
+                          example?: string
+                          topic?: string
+                        }>)
+                      : []
+                    const nextTerms = terms.map((term, index) => ({
+                      id: Date.now() + index,
+                      term: term.name,
+                      definition: term.definition,
+                      example: term.example,
+                      topic: term.topic,
+                    }))
+
+                    localStorage.setItem(
+                      storageKey,
+                      JSON.stringify({
+                        classId: selectedSubjectId,
+                        className: selectedSubject?.name ?? glossaryObject?.class ?? 'Glosario',
+                        savedAt: new Date().toISOString(),
+                        terms: [...currentTerms, ...nextTerms],
+                      }),
                     )
-                    if (resp.ok) {
-                      onOpenChange(false)
-                      router.push(`/glossaries/${selectedSubjectId}`)
-                    } else {
-                      onOpenChange(false)
-                    }
+
+                    onOpenChange(false)
+                    router.push(`/glossaries/${selectedSubjectId}`)
                   } catch {
                     onOpenChange(false)
                   }
