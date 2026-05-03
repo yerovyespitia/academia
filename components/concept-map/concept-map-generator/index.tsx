@@ -377,7 +377,7 @@ function ConceptMapSVG({
   layout: ReturnType<typeof buildLayout>
   selectedNode: string | null
   onSelectNode: (id: string) => void
-  svgRef?: React.RefObject<SVGSVGElement>
+  svgRef?: React.RefObject<SVGSVGElement | null>
 }) {
   const { concepts, edges, canvasW, canvasH } = layout
   const nodeMap = new Map(concepts.map((c) => [c.id, c]))
