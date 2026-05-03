@@ -52,7 +52,9 @@ export default function Navbar() {
         .slice(0, 2)
         .map((w: string) => w[0].toUpperCase())
         .join('')
-    : '?'
+    : currentUser?.email
+      ? currentUser.email[0].toUpperCase()
+      : '?'
 
   return (
     <nav className='border-b border-muted-foreground/30'>
