@@ -5,6 +5,8 @@ import { LogOut, Menu, Settings, User, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 import { useUserClasses } from '@/lib/use-user-classes'
 
@@ -41,6 +43,16 @@ export default function Navbar() {
   const pathname = usePathname()
   const { classes } = useUserClasses()
   const [open, setOpen] = useState(false)
+  const currentUser = useQuery(api.users.getCurrent)
+
+  const initials = currentUser?.name
+    ? currentUser.name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w: string) => w[0].toUpperCase())
+        .join('')
+    : '?'
 
   return (
     <nav className='border-b border-muted-foreground/30'>
@@ -77,7 +89,7 @@ export default function Navbar() {
               <button type='button' className='cursor-pointer rounded-full'>
                 <Avatar className='size-8'>
                   <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
-                    LE
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
               </button>
