@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import {
-  MessageSquare,
   HelpCircle,
   BookOpen,
   GitBranch,
@@ -8,12 +7,6 @@ import {
 } from 'lucide-react'
 
 const features = [
-  {
-    icon: MessageSquare,
-    title: 'Chat AI',
-    description:
-      'Conversa con una IA entrenada en tus documentos académicos para resolver dudas al instante.',
-  },
   {
     icon: HelpCircle,
     title: 'Quizzes',
@@ -86,7 +79,7 @@ export default function LandingPage() {
         <h2 className='text-center text-xs font-semibold uppercase tracking-widest text-[#1a4d2e] mb-12'>
           Herramientas
         </h2>
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {features.map((f) => (
             <div
               key={f.title}
